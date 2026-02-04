@@ -11,6 +11,6 @@ router.get('/:orderId', protect, orderController.getOrderById);
 router.put('/:orderId/cancel', protect, orderController.cancelOrder);
 
 // Public route for payment callback
-router.post('/payment/callback', orderController.paymentCallback);
+// router.post('/payment/callback', orderController.paymentCallback);
 
 export default router;

@@ -17,9 +17,10 @@ export const loginRateLimiter = rateLimit({
     // Skip successful requests (only count failed logins)
     skipSuccessfulRequests: false,
     // Custom key generator (use IP + mobile if available)
-    keyGenerator: (req) => {
-        return req.body.mobile || req.ip;
-    }
+    // keyGenerator: (req) => {
+    //     return req.body.mobile || req.ip;
+    // },
+    // validate: { trustProxy: false }
 });
 
 /**
@@ -35,9 +36,10 @@ export const passwordResetRateLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-        return req.body.email || req.ip;
-    }
+    // keyGenerator: (req) => {
+    //     return req.body.email || req.ip;
+    // },
+    // validate: { trustProxy: false }
 });
 
 /**
@@ -53,9 +55,10 @@ export const registrationRateLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-        return req.ip;
-    }
+    // keyGenerator: (req) => {
+    //     return req.ip;
+    // },
+    // validate: { trustProxy: false }
 });
 
 /**
@@ -70,7 +73,8 @@ export const apiRateLimiter = rateLimit({
         message: 'Too many requests from this IP, please try again later'
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    validate: { trustProxy: false }
 });
 
 export default {

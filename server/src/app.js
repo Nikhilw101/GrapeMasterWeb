@@ -7,6 +7,9 @@ import errorMiddleware from './middlewares/error.middleware.js';
 
 const app = express();
 
+// Trust proxy for rate limiter
+app.set('trust proxy', 1);
+
 // Middlewares
 app.use(cors({
     origin: FRONTEND_URL,

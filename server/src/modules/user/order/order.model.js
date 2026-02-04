@@ -4,8 +4,7 @@ import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } from '../../../utils/co
 const orderSchema = new mongoose.Schema({
     orderId: {
         type: String,
-        unique: true,
-        required: true
+        unique: true
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,

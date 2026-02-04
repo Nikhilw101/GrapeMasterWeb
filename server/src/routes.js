@@ -23,9 +23,9 @@ router.use('/dealers', dealerRoutes);
 router.use('/payments', paymentRoutes);
 
 // Admin Routes
-router.use('/admin', adminRoutes);
 router.use('/admin/products', productRoutes);
 router.use('/admin/orders', adminOrderRoutes);
 router.use('/admin/settings', settingsRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

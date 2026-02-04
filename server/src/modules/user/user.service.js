@@ -37,7 +37,12 @@ const registerUser = async (userData) => {
 
         // Send welcome email if email provided
         if (email) {
-            await sendWelcomeEmail(email, name);
+            try {
+                await sendWelcomeEmail(email, name);
+            } catch (emailError) {
+                logger.error(`Welcome email error: ${emailError.message}`);
+                // Continue execution, don't fail registration
+            }
         }
 
         return {
