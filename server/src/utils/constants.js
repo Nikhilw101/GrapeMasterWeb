@@ -35,12 +35,6 @@ export const PAYMENT_METHODS = {
     COD: 'cod'
 };
 
-// Dealer Types
-export const DEALER_TYPES = {
-    DEALER: 'dealer',
-    DISTRIBUTOR: 'distributor'
-};
-
 // Authentication
 export const TOKEN_TYPES = {
     ACCESS: 'access',

@@ -9,6 +9,39 @@ import { CATEGORIES } from '@/constants/categories';
  * Browse categories section with grid layout
  */
 export function CategorySection() {
+    const [categories, setCategories] = React.useState([]);
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const { getCategories } = await import('@/services/product.service');
+                const result = await getCategories();
+                if (result.success) {
+                    // Map fetched strings to category objects with icons
+                    // Ideally, backend should provide this, but for now we map dynamically
+                    const mappedCategories = result.data.map((catName, index) => {
+                        // Find matching config from constants or use default
+                        const match = CATEGORIES.find(c => c.name === catName) || {};
+                        return {
+                            id: index + 1,
+                            name: catName,
+                            slug: match.slug || catName.toLowerCase().replace(/\s+/g, '-'),
+                            icon: match.icon || CATEGORIES[0].icon
+                        };
+                    });
+                    setCategories(mappedCategories);
+                }
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                // Fallback to static if fail
+                setCategories(CATEGORIES);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    if (categories.length === 0) return null;
+
     return (
         <section id="categories" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <motion.div
@@ -26,7 +59,7 @@ export function CategorySection() {
             </motion.div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
-                {CATEGORIES.map((category, index) => (
+                {categories.map((category, index) => (
                     <motion.div
                         key={category.id}
                         initial={{ opacity: 0, y: 20 }}

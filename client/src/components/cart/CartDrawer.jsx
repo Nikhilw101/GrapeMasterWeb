@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { formatPrice } from '@/lib/utils';
 
+import { useNavigate } from 'react-router-dom';
+
 /**
  * CartDrawer Component
  * Side drawer showing cart contents using Shadcn Sheet
  */
 export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, cartTotal }) {
+    const navigate = useNavigate();
+
+    const handleCheckout = () => {
+        onClose();
+        navigate('/checkout');
+    };
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
             <SheetContent>
@@ -45,9 +53,19 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
                                         className="flex gap-4 p-3 bg-gray-50 rounded-xl"
                                     >
                                         <img
-                                            src={item.image}
+                                            src={(() => {
+                                                if (!item.image) return '/placeholder.jpg';
+                                                if (item.image.startsWith('http')) return item.image;
+                                                const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001';
+                                                const imagePath = item.image.startsWith('/') ? item.image : `/${item.image}`;
+                                                return `${baseUrl}${imagePath}`;
+                                            })()}
                                             alt={item.name}
                                             className="w-20 h-20 object-cover rounded-lg"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = 'https://placehold.co/100x100?text=No+Image';
+                                            }}
                                         />
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{item.name}</h4>
@@ -89,8 +107,12 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
                                     <span className="text-green-600">{formatPrice(cartTotal)}</span>
                                 </div>
                                 {/* Checkout Button */}
-                                <Button size="lg" className="w-full">
-                                    Checkout
+                                <Button
+                                    size="lg"
+                                    className="w-full"
+                                    onClick={handleCheckout}
+                                >
+                                    Proceed to Checkout
                                 </Button>
                             </div>
                         </>

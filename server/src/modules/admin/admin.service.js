@@ -1,7 +1,6 @@
 import Admin from './admin.model.js';
 import User from '../user/user.model.js';
 import Order from '../user/order/order.model.js';
-import Dealer from '../user/dealer/dealer.model.js';
 import { generateTokenPair } from '../../utils/jwt.util.js';
 import logger from '../../utils/logger.js';
 
@@ -53,7 +52,6 @@ const getDashboardStats = async () => {
     try {
         const totalOrders = await Order.countDocuments();
         const totalUsers = await User.countDocuments({ role: 'user' });
-        const totalDealerEnquiries = await Dealer.countDocuments();
         const pendingOrders = await Order.countDocuments({ orderStatus: 'placed' });
 
         // Calculate Total Revenue (Only successful payments)
@@ -112,7 +110,6 @@ const getDashboardStats = async () => {
                 stats: {
                     totalOrders,
                     totalUsers,
-                    totalDealerEnquiries,
                     pendingOrders,
                     totalRevenue
                 },
@@ -149,16 +146,59 @@ const getAllUsers = async (query) => {
         }
 
         const total = await User.countDocuments(filter);
-        const users = await User.find(filter)
-            .select('-password -refreshToken -resetPasswordToken -resetPasswordExpire')
-            .sort({ createdAt: -1 })
-            .skip(startIndex)
-            .limit(limit);
+
+        // Get users with order statistics using aggregation
+        const usersWithStats = await User.aggregate([
+            { $match: filter },
+            { $sort: { createdAt: -1 } },
+            { $skip: startIndex },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'orders',
+                    localField: '_id',
+                    foreignField: 'user',
+                    as: 'orders'
+                }
+            },
+            {
+                $addFields: {
+                    orderCount: { $size: '$orders' },
+                    totalSpent: {
+                        $sum: {
+                            $map: {
+                                input: {
+                                    $filter: {
+                                        input: '$orders',
+                                        as: 'order',
+                                        cond: { $eq: ['$$order.paymentStatus', 'success'] }
+                                    }
+                                },
+                                as: 'order',
+                                in: '$$order.pricing.total'
+                            }
+                        }
+                    },
+                    lastOrderDate: {
+                        $max: '$orders.createdAt'
+                    }
+                }
+            },
+            {
+                $project: {
+                    password: 0,
+                    refreshToken: 0,
+                    resetPasswordToken: 0,
+                    resetPasswordExpire: 0,
+                    orders: 0
+                }
+            }
+        ]);
 
         return {
             success: true,
             data: {
-                users,
+                users: usersWithStats,
                 pagination: {
                     page,
                     limit,
@@ -173,7 +213,7 @@ const getAllUsers = async (query) => {
     }
 };
 
-// Get user by ID
+// Get user by ID with detailed information
 const getUserById = async (userId) => {
     try {
         const user = await User.findById(userId).select('-password -refreshToken');
@@ -182,9 +222,48 @@ const getUserById = async (userId) => {
             return { success: false, message: 'User not found' };
         }
 
+        // Get order statistics
+        const orderStats = await Order.aggregate([
+            { $match: { user: user._id } },
+            {
+                $group: {
+                    _id: null,
+                    totalOrders: { $sum: 1 },
+                    totalSpent: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ['$paymentStatus', 'success'] },
+                                '$pricing.total',
+                                0
+                            ]
+                        }
+                    },
+                    lastOrderDate: { $max: '$createdAt' }
+                }
+            }
+        ]);
+
+        // Get recent orders
+        const recentOrders = await Order.find({ user: userId })
+            .populate('items.product', 'name price')
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select('orderId orderStatus pricing createdAt paymentStatus');
+
+        const stats = orderStats[0] || { totalOrders: 0, totalSpent: 0, lastOrderDate: null };
+
         return {
             success: true,
-            data: user
+            data: {
+                user,
+                statistics: {
+                    orderCount: stats.totalOrders,
+                    totalSpent: stats.totalSpent,
+                    lastOrderDate: stats.lastOrderDate,
+                    averageOrderValue: stats.totalOrders > 0 ? stats.totalSpent / stats.totalOrders : 0
+                },
+                recentOrders
+            }
         };
     } catch (error) {
         logger.error(`Get user by ID error: ${error.message}`);

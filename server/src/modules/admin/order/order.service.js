@@ -19,9 +19,9 @@ const getAllOrders = async (query) => {
 
         const filter = {};
 
-        // Filter by order status
-        if (query.orderStatus) {
-            filter.orderStatus = query.orderStatus;
+        // Filter by order status (support both 'status' and 'orderStatus' for backward compatibility)
+        if (query.orderStatus || query.status) {
+            filter.orderStatus = query.orderStatus || query.status;
         }
 
         // Filter by payment status
@@ -126,17 +126,17 @@ const approveOrder = async (orderId, adminId, note) => {
         });
 
         await order.save();
-        await order.populate('user');
 
-        // Send approval email to customer
-        try {
-            const user = await User.findById(order.user);
-            if (user && user.email) {
-                await sendOrderApprovedEmail(user, order);
-            }
-        } catch (emailError) {
-            logger.error(`Approval email error: ${emailError.message}`);
-        }
+        // Send approval email asynchronously (fire-and-forget)
+        User.findById(order.user)
+            .then(user => {
+                if (user && user.email) {
+                    return sendOrderApprovedEmail(user, order);
+                }
+            })
+            .catch(emailError => {
+                logger.error(`Approval email error: ${emailError.message}`);
+            });
 
         return {
             success: true,
@@ -180,15 +180,16 @@ const rejectOrder = async (orderId, adminId, reason) => {
 
         await order.save();
 
-        // Send rejection email to customer
-        try {
-            const user = await User.findById(order.user);
-            if (user && user.email) {
-                await sendOrderRejectedEmail(user, order, reason);
-            }
-        } catch (emailError) {
-            logger.error(`Rejection email error: ${emailError.message}`);
-        }
+        // Send rejection email asynchronously (fire-and-forget)
+        User.findById(order.user)
+            .then(user => {
+                if (user && user.email) {
+                    return sendOrderRejectedEmail(user, order, reason);
+                }
+            })
+            .catch(emailError => {
+                logger.error(`Rejection email error: ${emailError.message}`);
+            });
 
         return {
             success: true,
@@ -230,15 +231,17 @@ const updateOrderStatus = async (orderId, status, note) => {
 
         await order.save();
 
-        // Send status update email
-        try {
-            const user = await User.findById(order.user);
-            if (user && user.email) {
-                await sendOrderStatusEmail(user, order, status);
-            }
-        } catch (emailError) {
-            logger.error(`Status email error: ${emailError.message}`);
-        }
+        // Send status update email asynchronously (fire-and-forget)
+        // Don't await - let it run in background to avoid blocking the response
+        User.findById(order.user)
+            .then(user => {
+                if (user && user.email) {
+                    return sendOrderStatusEmail(user, order, status);
+                }
+            })
+            .catch(emailError => {
+                logger.error(`Status email error: ${emailError.message}`);
+            });
 
         return {
             success: true,

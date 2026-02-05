@@ -427,9 +427,20 @@ export default function ProductManager() {
                             <div className="aspect-[4/3] relative bg-gray-50 overflow-hidden">
                                 {product.image ? (
                                     <img
-                                        src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001'}${product.image}`}
+                                        src={(() => {
+                                            if (!product.image) return '/placeholder.jpg';
+                                            if (product.image.startsWith('http')) return product.image;
+                                            const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001';
+                                            const imagePath = product.image.startsWith('/') ? product.image : `/${product.image}`;
+                                            return `${baseUrl}${imagePath}`;
+                                        })()}
                                         alt={product.name}
+                                        referrerPolicy="no-referrer"
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'https://placehold.co/400x400?text=No+Image';
+                                        }}
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-300">

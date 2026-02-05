@@ -30,6 +30,19 @@ export const getProductById = asyncHandler(async (req, res) => {
     successResponse(res, result.data, 'Product fetched successfully');
 });
 
+// @desc    Get all unique categories
+// @route   GET /api/admin/products/categories
+// @access  Public
+export const getCategories = asyncHandler(async (req, res) => {
+    const result = await productService.getCategories();
+
+    if (!result.success) {
+        return errorResponse(res, result.message, 500);
+    }
+
+    successResponse(res, result.data, 'Categories fetched successfully');
+});
+
 // @desc    Create product
 // @route   POST /api/admin/products
 // @access  Private/Admin

@@ -4,7 +4,6 @@ import express from 'express';
 import userRoutes from './modules/user/user.routes.js';
 import orderRoutes from './modules/user/order/order.routes.js';
 import cartRoutes from './modules/user/cart/cart.routes.js';
-import dealerRoutes from './modules/user/dealer/dealer.routes.js';
 import paymentRoutes from './modules/user/payment/payment.routes.js';
 
 // Admin Module Routes
@@ -19,7 +18,6 @@ const router = express.Router();
 router.use('/users', userRoutes);
 router.use('/orders', orderRoutes);
 router.use('/cart', cartRoutes);
-router.use('/dealers', dealerRoutes);
 router.use('/payments', paymentRoutes);
 
 // Custom Modules

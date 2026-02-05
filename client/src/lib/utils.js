@@ -10,12 +10,13 @@ export function cn(...inputs) {
 }
 
 /**
- * Format price to USD currency
+ * Format price to INR currency
  */
 export function formatPrice(price) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'INR',
+        maximumFractionDigits: 0,
     }).format(price);
 }
 

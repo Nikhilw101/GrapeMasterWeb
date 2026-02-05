@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, Loader, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '@/services/api';
+import * as uploadService from '@/services/upload.service';
 
 const ImageUpload = ({ value, onChange, className }) => {
     const [isUploading, setIsUploading] = useState(false);
@@ -53,17 +53,13 @@ const ImageUpload = ({ value, onChange, className }) => {
             const formData = new FormData();
             formData.append('image', file);
 
-            // Use the admin upload endpoint
-            const response = await api.post('/admin/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            // Use the upload service
+            const response = await uploadService.uploadImage(formData);
 
-            if (response.data.success) {
+            if (response.success) {
                 // The backend returns a relative URL like "/uploads/filename.jpg"
                 // We pass this back to the parent component
-                onChange(response.data.data.imageUrl);
+                onChange(response.data.imageUrl);
                 toast.success('Image uploaded successfully');
             }
         } catch (error) {

@@ -3,6 +3,7 @@ import User from '../user.model.js';
 import Cart from '../cart/cart.model.js';
 import cartService from '../cart/cart.service.js';
 import Product from '../../admin/product/product.model.js';
+import Settings from '../../admin/settings/settings.model.js';
 import logger from '../../../utils/logger.js';
 import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } from '../../../utils/constants.js';
 import { DEFAULT_DELIVERY_CHARGE } from '../../../config/env.js';
@@ -60,7 +61,21 @@ const createOrderFromCart = async (userId, orderData) => {
             });
         }
 
-        const deliveryCharges = parseFloat(DEFAULT_DELIVERY_CHARGE);
+        let deliveryCharges = 0; // Default to 0
+        try {
+            const settingsCharge = await Settings.findOne({ key: 'deliveryCharge' });
+            if (settingsCharge) {
+                deliveryCharges = parseFloat(settingsCharge.value) || 0;
+            } else if (typeof DEFAULT_DELIVERY_CHARGE !== 'undefined') {
+                deliveryCharges = parseFloat(DEFAULT_DELIVERY_CHARGE);
+            }
+        } catch (err) {
+            logger.warn(`Failed to fetch custom delivery charge: ${err.message}`);
+            // Fallback
+            if (typeof DEFAULT_DELIVERY_CHARGE !== 'undefined') {
+                deliveryCharges = parseFloat(DEFAULT_DELIVERY_CHARGE);
+            }
+        }
         const total = itemsTotal + deliveryCharges;
 
         // Create order

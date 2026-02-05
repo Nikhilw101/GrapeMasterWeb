@@ -153,6 +153,20 @@ const bulkUpdateProducts = async (productIds, updateData) => {
     }
 };
 
+// Get all unique categories
+const getCategories = async () => {
+    try {
+        const categories = await Product.distinct('category');
+        return {
+            success: true,
+            data: categories.filter(c => c) // Filter out null/undefined
+        };
+    } catch (error) {
+        logger.error(`Get categories error: ${error.message}`);
+        return { success: false, message: error.message };
+    }
+};
+
 export default {
     getProducts,
     getProductById,
@@ -161,5 +175,6 @@ export default {
     deleteProduct,
     toggleProductStatus,
     bulkDeleteProducts,
-    bulkUpdateProducts
+    bulkUpdateProducts,
+    getCategories
 };

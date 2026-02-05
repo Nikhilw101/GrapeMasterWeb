@@ -7,14 +7,14 @@ const productSchema = new mongoose.Schema({
         trim: true,
         unique: true
     },
-    weight: {
-        type: String,
-        required: [true, 'Please provide weight'],
-        trim: true
-    },
     price: {
         type: Number,
         required: [true, 'Please provide price'],
+        min: 0
+    },
+    originalPrice: {
+        type: Number,
+        default: 0,
         min: 0
     },
     description: {
@@ -28,28 +28,12 @@ const productSchema = new mongoose.Schema({
     category: {
         type: String,
         trim: true,
-        default: 'Grapes'
+        default: 'Red'
     },
     stock: {
         type: Number,
         default: 100,
         min: 0
-    },
-    // New fields
-    origin: {
-        type: String,
-        trim: true,
-        default: 'Nashik'
-    },
-    discount: {
-        type: Number,
-        default: 0,
-        min: 0,
-        max: 100
-    },
-    isFeatured: {
-        type: Boolean,
-        default: false
     },
     unit: {
         type: String,
@@ -69,6 +53,16 @@ const productSchema = new mongoose.Schema({
     features: [{
         type: String
     }],
+    discount: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
+    isFeatured: {
+        type: Boolean,
+        default: false
+    },
     isActive: {
         type: Boolean,
         default: true

@@ -20,6 +20,24 @@ export const login = async (mobile, password) => {
     return response.data;
 };
 
+export const refreshToken = async (token) => {
+    const response = await api.post('/users/refresh-token', { refreshToken: token });
+    if (response.data?.data?.accessToken) {
+        localStorage.setItem('accessToken', response.data.data.accessToken);
+    }
+    return response.data;
+};
+
+export const forgotPassword = async (mobile) => {
+    const response = await api.post('/users/forgot-password', { mobile });
+    return response.data;
+};
+
+export const resetPassword = async (token, password) => {
+    const response = await api.post('/users/reset-password', { token, password });
+    return response.data;
+};
+
 export const logout = async () => {
     try {
         await api.post('/users/logout');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
@@ -9,17 +9,27 @@ import { SignupPage } from '@/pages/SignupPage';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
-import { PRODUCTS } from '@/constants/products';
 import { Toaster } from 'sonner';
 import AdminLayout from '@/components/admin/layout/AdminLayout';
+import CheckoutPage from '@/pages/CheckoutPage';
+import ProfilePage from '@/pages/ProfilePage';
+import ProductDetailsPage from '@/pages/ProductDetailsPage';
 import {
     AdminLoginPage,
     DashboardPage,
     ProductManager,
     UserManager,
-    OrderManager
+    OrderManager,
+    SettingsPage
 } from '@/pages/admin';
 import '@/styles/index.css';
+
+const ProtectedRoute = ({ children }) => {
+    const { isAuthenticated, loading } = useAuth();
+    if (loading) return null; // Or a loader
+    if (!isAuthenticated) return <Navigate to="/login" />;
+    return children;
+};
 
 /**
  * Main Layout Component
@@ -42,6 +52,24 @@ const AppLayout = () => {
     // Wishlist management
     const { wishlist, toggleWishlist, isInWishlist } = useWishlist();
 
+    // Product management
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const { getProducts } = await import('@/services/product.service');
+                const result = await getProducts();
+                if (result.success) {
+                    setProducts(result.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+            }
+        };
+        fetchProducts();
+    }, []);
+
     return (
         <div className="min-h-screen flex flex-col">
             <Toaster position="top-center" richColors />
@@ -58,7 +86,7 @@ const AppLayout = () => {
                         path="/"
                         element={
                             <HomePage
-                                products={PRODUCTS}
+                                products={products}
                                 onAddToCart={addToCart}
                                 onToggleWishlist={toggleWishlist}
                                 isInWishlist={isInWishlist}
@@ -67,6 +95,23 @@ const AppLayout = () => {
                     />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
+                    <Route
+                        path="/checkout"
+                        element={
+                            <ProtectedRoute>
+                                <CheckoutPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <ProfilePage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="/product/:id" element={<ProductDetailsPage />} />
                 </Routes>
             </main>
 
@@ -101,6 +146,7 @@ function App() {
                         <Route path="products" element={<ProductManager />} />
                         <Route path="users" element={<UserManager />} />
                         <Route path="orders" element={<OrderManager />} />
+                        <Route path="settings" element={<SettingsPage />} />
                         {/* Add other admin routes here as they are created */}
                     </Route>
 

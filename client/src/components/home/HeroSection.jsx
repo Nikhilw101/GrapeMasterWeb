@@ -9,6 +9,23 @@ import { Badge } from '@/components/ui/badge';
  * Main hero section with call-to-action and trust indicators
  */
 export function HeroSection() {
+    const [deliveryThreshold, setDeliveryThreshold] = React.useState(500);
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const { getSettingByKey } = await import('@/services/settings.service');
+                const result = await getSettingByKey('freeDeliveryThreshold');
+                if (result.success && result.data) {
+                    setDeliveryThreshold(result.data.value);
+                }
+            } catch (error) {
+                // Keep default if fail
+            }
+        };
+        fetchSettings();
+    }, []);
+
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-center">
@@ -60,7 +77,7 @@ export function HeroSection() {
                         >
                             <Truck className="w-6 h-6 sm:w-7 sm:h-7 text-green-600 mx-auto sm:mx-0 mb-2" />
                             <p className="text-xs sm:text-sm font-semibold text-gray-900">Fast Delivery</p>
-                            <p className="text-xs text-gray-500 hidden sm:block">Orders over ₹500</p>
+                            <p className="text-xs text-gray-500 hidden sm:block">Orders over ₹{deliveryThreshold}</p>
                         </motion.div>
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}

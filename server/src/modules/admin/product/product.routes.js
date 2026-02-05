@@ -8,6 +8,7 @@ import { productSchema, updateProductSchema } from './product.validation.js';
 const router = express.Router();
 
 // Public routes
+router.get('/categories', productController.getCategories);
 router.get('/', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
 

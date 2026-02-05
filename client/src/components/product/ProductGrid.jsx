@@ -30,7 +30,7 @@ export function ProductGrid({ products, onAddToCart, onToggleWishlist, isInWishl
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
         >
             {products.map((product) => (
-                <motion.div key={product.id} variants={item}>
+                <motion.div key={product.id || product._id} variants={item}>
                     <ProductCard
                         product={product}
                         onAddToCart={onAddToCart}

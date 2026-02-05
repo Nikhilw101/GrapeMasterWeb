@@ -17,9 +17,19 @@ export const adminLogout = () => {
     window.location.href = '/admin/login';
 };
 
+export const changePassword = async (passwords) => {
+    const response = await api.put('/admin/change-password', passwords);
+    return response.data;
+};
+
 // Dashboard Stats
 export const getDashboardStats = async () => {
     const response = await api.get('/admin/dashboard');
+    return response.data;
+};
+
+export const getOrderStats = async () => {
+    const response = await api.get('/admin/orders/stats');
     return response.data;
 };
 
@@ -69,6 +79,12 @@ export const updateUserStatus = async (id, status) => {
     const response = await api.put(`/admin/users/${id}/status`, { status });
     return response.data;
 };
+
+export const getUserDetails = async (id) => {
+    const response = await api.get(`/admin/users/${id}`);
+    return response.data;
+};
+
 
 // Order Management
 export const getOrders = async (params) => {
