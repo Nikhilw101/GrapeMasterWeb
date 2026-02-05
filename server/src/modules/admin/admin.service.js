@@ -52,19 +52,59 @@ const loginAdmin = async (email, password) => {
 const getDashboardStats = async () => {
     try {
         const totalOrders = await Order.countDocuments();
-        const totalUsers = await User.countDocuments();
+        const totalUsers = await User.countDocuments({ role: 'user' });
         const totalDealerEnquiries = await Dealer.countDocuments();
-
         const pendingOrders = await Order.countDocuments({ orderStatus: 'placed' });
-        const totalRevenue = await Order.aggregate([
+
+        // Calculate Total Revenue (Only successful payments)
+        const revenueResult = await Order.aggregate([
             { $match: { paymentStatus: 'success' } },
             { $group: { _id: null, total: { $sum: '$pricing.total' } } }
+        ]);
+        const totalRevenue = revenueResult[0]?.total || 0;
+
+        // Calculate Sales Trend (Last 7 Days)
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
+        last7Days.setHours(0, 0, 0, 0);
+
+        const salesTrend = await Order.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: last7Days },
+                    paymentStatus: 'success'
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    sales: { $sum: '$pricing.total' },
+                    orders: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Calculate Top Selling Products
+        const topProducts = await Order.aggregate([
+            { $match: { paymentStatus: 'success' } },
+            { $unwind: '$items' },
+            {
+                $group: {
+                    _id: '$items.product',
+                    name: { $first: '$items.productName' },
+                    totalSold: { $sum: '$items.quantity' },
+                    revenue: { $sum: '$items.subtotal' }
+                }
+            },
+            { $sort: { totalSold: -1 } },
+            { $limit: 5 }
         ]);
 
         const recentOrders = await Order.find()
             .populate('user', 'name mobile')
             .sort({ createdAt: -1 })
-            .limit(10);
+            .limit(5);
 
         return {
             success: true,
@@ -74,7 +114,11 @@ const getDashboardStats = async () => {
                     totalUsers,
                     totalDealerEnquiries,
                     pendingOrders,
-                    totalRevenue: totalRevenue[0]?.total || 0
+                    totalRevenue
+                },
+                analytics: {
+                    salesTrend,
+                    topProducts
                 },
                 recentOrders
             }

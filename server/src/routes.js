@@ -22,7 +22,11 @@ router.use('/cart', cartRoutes);
 router.use('/dealers', dealerRoutes);
 router.use('/payments', paymentRoutes);
 
+// Custom Modules
+import uploadRoutes from './modules/upload/upload.routes.js';
+
 // Admin Routes
+router.use('/admin/upload', uploadRoutes); // Moved upload under admin namespace
 router.use('/admin/products', productRoutes);
 router.use('/admin/orders', adminOrderRoutes);
 router.use('/admin/settings', settingsRoutes);

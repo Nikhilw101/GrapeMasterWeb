@@ -51,11 +51,24 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    unit: {
+        type: String,
+        required: true,
+        default: 'kg'
+    },
+    origin: {
+        type: String,
+        required: true,
+        default: 'Nashik'
+    },
     grade: {
         type: String,
-        trim: true,
-        default: 'A'
+        enum: ['A++', 'A+', 'A', 'B'],
+        default: 'A+'
     },
+    features: [{
+        type: String
+    }],
     isActive: {
         type: Boolean,
         default: true

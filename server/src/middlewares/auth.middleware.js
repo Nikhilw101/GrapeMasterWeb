@@ -1,5 +1,6 @@
 import { verifyAccessToken } from '../utils/jwt.util.js';
 import User from '../modules/user/user.model.js';
+import Admin from '../modules/admin/admin.model.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -25,8 +26,14 @@ export const protect = async (req, res, next) => {
         // Verify token and decode payload
         const decoded = verifyAccessToken(token);
 
-        // Check if user exists and is active
-        const user = await User.findById(decoded.id).select('-password');
+        let user;
+
+        // Check if user exists based on role
+        if (decoded.role === 'admin') {
+            user = await Admin.findById(decoded.id);
+        } else {
+            user = await User.findById(decoded.id).select('-password');
+        }
 
         if (!user) {
             return res.status(401).json({
@@ -35,11 +42,16 @@ export const protect = async (req, res, next) => {
             });
         }
 
-        if (user.status !== 'active') {
-            return res.status(401).json({
-                success: false,
-                message: user.status === 'blocked' ? 'Account is blocked' : 'Account is inactive'
-            });
+        if (user.status !== 'active' && user.isActive !== true) { // Handle both User.status and Admin.isActive
+            // Admin uses isActive (bool), User uses status (string)
+            const isActive = decoded.role === 'admin' ? user.isActive : (user.status === 'active');
+
+            if (!isActive) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Account is deactivated or blocked'
+                });
+            }
         }
 
         // Attach user to request object

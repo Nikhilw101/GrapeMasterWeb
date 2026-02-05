@@ -86,3 +86,49 @@ export const toggleProductStatus = asyncHandler(async (req, res) => {
 
     successResponse(res, result.data, 'Product status updated successfully');
 });
+// @desc    Bulk delete products
+// @route   POST /api/admin/products/bulk-delete
+// @access  Private/Admin
+export const bulkDeleteProducts = asyncHandler(async (req, res) => {
+    const { productIds } = req.body;
+
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+        return errorResponse(res, 'Please provide an array of product IDs', 400);
+    }
+
+    const result = await productService.bulkDeleteProducts(productIds);
+
+    if (!result.success) {
+        return errorResponse(res, result.message, 500);
+    }
+
+    successResponse(res, result.data, 'Products deleted successfully');
+});
+
+// @desc    Bulk update products
+// @route   POST /api/admin/products/bulk-update
+// @access  Private/Admin
+export const bulkUpdateProducts = asyncHandler(async (req, res) => {
+    const { productIds, action } = req.body;
+
+    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+        return errorResponse(res, 'Please provide an array of product IDs', 400);
+    }
+
+    let updateData = {};
+    if (action === 'activate') {
+        updateData = { isActive: true };
+    } else if (action === 'deactivate') {
+        updateData = { isActive: false };
+    } else {
+        return errorResponse(res, 'Invalid action', 400);
+    }
+
+    const result = await productService.bulkUpdateProducts(productIds, updateData);
+
+    if (!result.success) {
+        return errorResponse(res, result.message, 500);
+    }
+
+    successResponse(res, result.data, 'Products updated successfully');
+});

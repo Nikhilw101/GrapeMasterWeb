@@ -15,6 +15,8 @@ router.get('/:id', productController.getProductById);
 router.post('/', protect, isAdmin, validate(productSchema), productController.createProduct);
 router.put('/:id', protect, isAdmin, validate(updateProductSchema), productController.updateProduct);
 router.delete('/:id', protect, isAdmin, productController.deleteProduct);
+router.post('/bulk-delete', protect, isAdmin, productController.bulkDeleteProducts);
+router.post('/bulk-update', protect, isAdmin, productController.bulkUpdateProducts);
 router.patch('/:id/toggle', protect, isAdmin, productController.toggleProductStatus);
 
 export default router;

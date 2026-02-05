@@ -114,6 +114,44 @@ const toggleProductStatus = async (productId) => {
         return { success: false, message: error.message };
     }
 };
+// Bulk delete products
+const bulkDeleteProducts = async (productIds) => {
+    try {
+        const result = await Product.deleteMany({ _id: { $in: productIds } });
+
+        return {
+            success: true,
+            data: {
+                message: 'Products deleted successfully',
+                count: result.deletedCount
+            }
+        };
+    } catch (error) {
+        logger.error(`Bulk delete products error: ${error.message}`);
+        return { success: false, message: error.message };
+    }
+};
+
+// Bulk update products status
+const bulkUpdateProducts = async (productIds, updateData) => {
+    try {
+        const result = await Product.updateMany(
+            { _id: { $in: productIds } },
+            { $set: updateData }
+        );
+
+        return {
+            success: true,
+            data: {
+                message: 'Products updated successfully',
+                count: result.modifiedCount
+            }
+        };
+    } catch (error) {
+        logger.error(`Bulk update products error: ${error.message}`);
+        return { success: false, message: error.message };
+    }
+};
 
 export default {
     getProducts,
@@ -121,5 +159,7 @@ export default {
     createProduct,
     updateProduct,
     deleteProduct,
-    toggleProductStatus
+    toggleProductStatus,
+    bulkDeleteProducts,
+    bulkUpdateProducts
 };
