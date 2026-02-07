@@ -97,6 +97,16 @@ server/
 
 *Required when implementing the respective features
 
+### Production (Render + Vercel): fix email links
+
+When the backend is on **Render** and the frontend on **Vercel**, set these in Render **Environment** so emails and Stripe redirects use your live site instead of localhost:
+
+| Variable | Value (example) |
+|----------|-----------------|
+| `FRONTEND_URL` | `https://grape-master.vercel.app` |
+
+Reset links, order emails, and payment success/cancel URLs are built from `FRONTEND_URL`. Optionally override: `RESET_PASSWORD_URL`, `ADMIN_RESET_PASSWORD_URL`, `PAYMENT_SUCCESS_URL`, `PAYMENT_CANCEL_URL`.
+
 ## 🔌 API Endpoints
 
 ### User Routes

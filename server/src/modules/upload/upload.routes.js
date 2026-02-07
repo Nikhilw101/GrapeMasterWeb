@@ -18,10 +18,8 @@ router.post('/', protect, isAdmin, upload.single('image'), (req, res) => {
             });
         }
 
-        // Return path relative to server root, clients should prepend base URL
-        // Window paths might have backslashes, normalize to forward slashes for URLs
-        const relativePath = req.file.path.replace(/\\/g, '/');
-        const imageUrl = `/${relativePath}`;
+        // Always return URL path (not filesystem path) so client can use getAssetBaseUrl() + imageUrl
+        const imageUrl = `/uploads/${req.file.filename}`;
 
         res.status(200).json({
             success: true,

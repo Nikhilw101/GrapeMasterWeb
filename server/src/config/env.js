@@ -18,7 +18,8 @@ export const JWT_REFRESH_EXPIRE = process.env.JWT_REFRESH_EXPIRE || '7d';
 export const RESEND_API_KEY = process.env.RESEND_API_KEY;
 export const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
-// Frontend URLs – where the React app runs (e.g. port 3000). Do NOT use the API port (PORT, e.g. 5001).
+// Frontend URLs – where the React app runs. In production set FRONTEND_URL to your Vercel (or frontend) origin.
+// All email links (reset password, order tracking, etc.) and Stripe redirects use this.
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 export const RESET_PASSWORD_URL = process.env.RESET_PASSWORD_URL || `${FRONTEND_URL}/reset-password`;
 export const ADMIN_RESET_PASSWORD_URL = process.env.ADMIN_RESET_PASSWORD_URL || `${FRONTEND_URL}/admin/reset-password`;
@@ -43,8 +44,8 @@ export const COMPANY_EMAIL = process.env.COMPANY_EMAIL || process.env.ADMIN_EMAI
 export const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 export const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY;
 export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-export const PAYMENT_SUCCESS_URL = process.env.PAYMENT_SUCCESS_URL || 'http://localhost:3000/payment/success';
-export const PAYMENT_CANCEL_URL = process.env.PAYMENT_CANCEL_URL || 'http://localhost:3000/payment/cancel';
+export const PAYMENT_SUCCESS_URL = process.env.PAYMENT_SUCCESS_URL || `${FRONTEND_URL}/payment/success`;
+export const PAYMENT_CANCEL_URL = process.env.PAYMENT_CANCEL_URL || `${FRONTEND_URL}/payment/cancel`;
 
 // Nodemailer (Fallback)
 export const NODEMAILER_HOST = process.env.NODEMAILER_HOST;
