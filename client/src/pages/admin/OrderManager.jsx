@@ -17,7 +17,7 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { getOrders, updateOrderStatus, approveOrder, rejectOrder } from '@/services/admin.service';
+import { getOrders, updateOrderStatus, approveOrder, rejectOrder, deleteOrder } from '@/services/admin.service';
 import { toast } from 'sonner';
 
 export default function OrderManager() {
@@ -34,7 +34,7 @@ export default function OrderManager() {
     const [actionModal, setActionModal] = useState({
         open: false,
         orderId: null,
-        type: null, // 'approve', 'reject', 'status'
+        type: null, // 'approve', 'reject', 'status', 'delete'
         newStatus: null,
         note: ''
     });
@@ -76,6 +76,8 @@ export default function OrderManager() {
                 result = await rejectOrder(orderId, note);
             } else if (type === 'status') {
                 result = await updateOrderStatus(orderId, newStatus, note);
+            } else if (type === 'delete') {
+                result = await deleteOrder(orderId);
             }
 
             if (result && result.success) {
@@ -235,6 +237,14 @@ export default function OrderManager() {
                                                             Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
                                                         </DropdownMenuItem>
                                                     ))}
+                                                    <DropdownMenuItem
+                                                        className="text-red-600 focus:text-red-600"
+                                                        onClick={() => setActionModal({
+                                                            open: true, orderId: order.orderId, type: 'delete', note: ''
+                                                        })}
+                                                    >
+                                                        Delete order (exclude from stats)
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
 
@@ -467,29 +477,33 @@ export default function OrderManager() {
                             {actionModal.type === 'approve' && 'Approve Order'}
                             {actionModal.type === 'reject' && 'Reject Order'}
                             {actionModal.type === 'status' && 'Update Status'}
+                            {actionModal.type === 'delete' && 'Delete Order'}
                         </DialogTitle>
                         <DialogDescription>
                             {actionModal.type === 'approve' && 'Add an optional note for the customer.'}
                             {actionModal.type === 'reject' && 'Please provide a reason for rejection.'}
                             {actionModal.type === 'status' && `Update status to ${actionModal.newStatus}?`}
+                            {actionModal.type === 'delete' && 'This order will be marked as cancelled and excluded from dashboard revenue and order counts. This cannot be undone.'}
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="py-4">
-                        <label className="text-sm font-medium mb-2 block">
-                            {actionModal.type === 'reject' ? 'Reason (Required)' : 'Note (Optional)'}
-                        </label>
-                        <Input
-                            value={actionModal.note}
-                            onChange={(e) => setActionModal(prev => ({ ...prev, note: e.target.value }))}
-                            placeholder={actionModal.type === 'reject' ? "Item out of stock..." : "Tracking ID: XYZ..."}
-                        />
-                    </div>
+                    {actionModal.type !== 'delete' && (
+                        <div className="py-4">
+                            <label className="text-sm font-medium mb-2 block">
+                                {actionModal.type === 'reject' ? 'Reason (Required)' : 'Note (Optional)'}
+                            </label>
+                            <Input
+                                value={actionModal.note}
+                                onChange={(e) => setActionModal(prev => ({ ...prev, note: e.target.value }))}
+                                placeholder={actionModal.type === 'reject' ? "Item out of stock..." : "Tracking ID: XYZ..."}
+                            />
+                        </div>
+                    )}
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setActionModal(prev => ({ ...prev, open: false }))} disabled={isUpdating}>Cancel</Button>
                         <Button
-                            variant={actionModal.type === 'reject' ? 'destructive' : 'default'}
+                            variant={actionModal.type === 'reject' || actionModal.type === 'delete' ? 'destructive' : 'default'}
                             onClick={handleAction}
                             disabled={(actionModal.type === 'reject' && !actionModal.note) || isUpdating}
                         >

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { SignupPage } from '@/pages/SignupPage';
@@ -13,21 +14,30 @@ import { Toaster } from 'sonner';
 import AdminLayout from '@/components/admin/layout/AdminLayout';
 import CheckoutPage from '@/pages/CheckoutPage';
 import ProfilePage from '@/pages/ProfilePage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import ProductDetailsPage from '@/pages/ProductDetailsPage';
+import PaymentSuccessPage from '@/pages/PaymentSuccessPage';
+import PaymentCancelPage from '@/pages/PaymentCancelPage';
+import BeADealerPage from '@/pages/BeADealerPage';
 import {
     AdminLoginPage,
+    AdminForgotPasswordPage,
+    AdminResetPasswordPage,
     DashboardPage,
     ProductManager,
     UserManager,
     OrderManager,
-    SettingsPage
+    SettingsPage,
+    DealerRequestsPage
 } from '@/pages/admin';
 import '@/styles/index.css';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
-    if (loading) return null; // Or a loader
-    if (!isAuthenticated) return <Navigate to="/login" />;
+    const location = useLocation();
+    if (loading) return null;
+    if (!isAuthenticated) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
     return children;
 };
 
@@ -49,8 +59,11 @@ const AppLayout = () => {
         getCartCount,
     } = useCart();
 
-    // Wishlist management
-    const { wishlist, toggleWishlist, isInWishlist } = useWishlist();
+    const { toggleWishlist, isInWishlist } = useWishlist();
+
+    // Home search (keyword + category) – lifted for Header and HomePage
+    const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
 
     // Product management
     const [products, setProducts] = useState([]);
@@ -75,18 +88,23 @@ const AppLayout = () => {
             <Toaster position="top-center" richColors />
             <Header
                 cartCount={getCartCount()}
-                wishlistCount={wishlist.length}
                 onCartClick={() => setIsCartOpen(true)}
                 user={user}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
             />
 
-            <main className="flex-1">
+            <main className="flex-1 pb-20 md:pb-0">
                 <Routes>
                     <Route
                         path="/"
                         element={
                             <HomePage
                                 products={products}
+                                searchQuery={searchQuery}
+                                categoryFilter={categoryFilter}
+                                onSearchQueryChange={setSearchQuery}
+                                onCategoryFilterChange={setCategoryFilter}
                                 onAddToCart={addToCart}
                                 onToggleWishlist={toggleWishlist}
                                 isInWishlist={isInWishlist}
@@ -95,6 +113,8 @@ const AppLayout = () => {
                     />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/signup" element={<SignupPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route
                         path="/checkout"
                         element={
@@ -112,10 +132,29 @@ const AppLayout = () => {
                         }
                     />
                     <Route path="/product/:id" element={<ProductDetailsPage />} />
+                    <Route path="/be-a-dealer" element={<BeADealerPage />} />
+                    <Route
+                        path="/payment/success"
+                        element={
+                            <ProtectedRoute>
+                                <PaymentSuccessPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/payment/cancel"
+                        element={
+                            <ProtectedRoute>
+                                <PaymentCancelPage />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Routes>
             </main>
 
             <Footer />
+
+            <BottomNav cartCount={getCartCount()} onCartClick={() => setIsCartOpen(true)} user={user} />
 
             <CartDrawer
                 isOpen={isCartOpen}
@@ -140,6 +179,8 @@ function App() {
                 <Routes>
                     {/* Admin Routes */}
                     <Route path="/admin/login" element={<AdminLoginPage />} />
+                    <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+                    <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<Navigate to="/admin/dashboard" replace />} />
                         <Route path="dashboard" element={<DashboardPage />} />
@@ -147,7 +188,7 @@ function App() {
                         <Route path="users" element={<UserManager />} />
                         <Route path="orders" element={<OrderManager />} />
                         <Route path="settings" element={<SettingsPage />} />
-                        {/* Add other admin routes here as they are created */}
+                        <Route path="dealer-requests" element={<DealerRequestsPage />} />
                     </Route>
 
                     {/* Public Routes */}

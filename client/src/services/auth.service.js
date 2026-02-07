@@ -28,8 +28,9 @@ export const refreshToken = async (token) => {
     return response.data;
 };
 
-export const forgotPassword = async (mobile) => {
-    const response = await api.post('/users/forgot-password', { mobile });
+// User: mail-based reset (backend sends reset link to email)
+export const forgotPassword = async (email) => {
+    const response = await api.post('/users/forgot-password', { email });
     return response.data;
 };
 

@@ -37,6 +37,7 @@ import {
     bulkUpdateProducts
 } from '@/services/admin.service';
 import { toast } from 'sonner';
+import { getAssetBaseUrl } from '@/config/env';
 import { ImageUpload } from '@/components/common';
 
 export default function ProductManager() {
@@ -430,9 +431,8 @@ export default function ProductManager() {
                                         src={(() => {
                                             if (!product.image) return '/placeholder.jpg';
                                             if (product.image.startsWith('http')) return product.image;
-                                            const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001';
-                                            const imagePath = product.image.startsWith('/') ? product.image : `/${product.image}`;
-                                            return `${baseUrl}${imagePath}`;
+                                            const path = product.image.startsWith('/') ? product.image : `/${product.image}`;
+                                            return `${getAssetBaseUrl()}${path}`;
                                         })()}
                                         alt={product.name}
                                         referrerPolicy="no-referrer"

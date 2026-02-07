@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Mail, ArrowRight, Loader } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { adminLogin } from '@/services/admin.service';
@@ -10,13 +10,30 @@ import { toast } from 'sonner';
 export default function AdminLoginPage() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
 
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        if (!formData.email?.trim()) {
+            setError('Please enter your email.');
+            toast.error('Please enter your email.');
+            return;
+        }
+        if (!formData.password) {
+            setError('Please enter your password.');
+            toast.error('Please enter your password.');
+            return;
+        }
         setIsLoading(true);
 
         try {
@@ -24,9 +41,18 @@ export default function AdminLoginPage() {
             if (response.success) {
                 toast.success('Welcome back, Admin!');
                 navigate('/admin/dashboard');
+                return;
             }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
+            const msg = response.message || 'Login failed. Please check your credentials.';
+            setError(msg);
+            toast.error(msg);
+        } catch (err) {
+            const msg =
+                err.response?.data?.message ||
+                err.message ||
+                (err.response?.status >= 500 ? 'Server error. Please try again later.' : 'Invalid email or password. Please try again.');
+            setError(msg);
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }
@@ -54,14 +80,21 @@ export default function AdminLoginPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+                            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
+                    )}
                     <div className="space-y-4">
                         <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <Input
                                 type="email"
+                                name="email"
                                 placeholder="Admin Email"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                onChange={handleChange}
                                 className="pl-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-green-500/20"
                                 required
                             />
@@ -70,9 +103,10 @@ export default function AdminLoginPage() {
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <Input
                                 type="password"
+                                name="password"
                                 placeholder="Password"
                                 value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                onChange={handleChange}
                                 className="pl-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-green-500/20"
                                 required
                             />
@@ -92,6 +126,12 @@ export default function AdminLoginPage() {
                             </span>
                         )}
                     </Button>
+
+                    <div className="text-center pt-2">
+                        <Link to="/admin/forgot-password" className="text-sm text-gray-400 hover:text-green-400 transition-colors">
+                            Forgot password?
+                        </Link>
+                    </div>
                 </form>
             </motion.div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,7 +15,9 @@ import {
 
 export const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth();
+    const from = location.state?.from || '/';
     const [formData, setFormData] = useState({
         mobile: '',
         password: '',
@@ -51,11 +54,13 @@ export const LoginPage = () => {
 
         try {
             await login(formData.mobile, formData.password);
-            navigate('/');
+            toast.success('Welcome back!');
+            navigate(from, { replace: true });
         } catch (err) {
             console.error('Login error:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to login';
+            const errorMessage = err.response?.data?.message || err.message || 'Invalid mobile or password. Please try again.';
             setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -88,6 +93,12 @@ export const LoginPage = () => {
                             </p>
                         </div>
                         <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium">Password</label>
+                                <Link to="/forgot-password" className="text-xs text-green-600 hover:text-green-500 hover:underline">
+                                    Forgot password?
+                                </Link>
+                            </div>
                             <Input
                                 type="password"
                                 name="password"

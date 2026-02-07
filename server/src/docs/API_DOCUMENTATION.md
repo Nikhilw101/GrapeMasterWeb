@@ -164,10 +164,11 @@ Request Body:
 Request Body:
 ```json
 {
-  "email": "admin@grapemaster.com",
-  "password": "admin_password"
+  "email": "your-admin@example.com",
+  "password": "your_password"
 }
 ```
+(Use the admin email/password from your .env `INITIAL_ADMIN_*` or the account created via POST `/api/admin/seed`.)
 
 ### Get Dashboard Stats
 **GET** `/admin/dashboard`

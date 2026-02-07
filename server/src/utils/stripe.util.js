@@ -182,6 +182,23 @@ export const handleWebhook = async (rawBody, signature) => {
                     }
                 };
 
+            case 'payment_intent.succeeded':
+                const pi = event.data.object;
+                const orderIdFromMeta = pi.metadata?.orderId;
+                if (orderIdFromMeta) {
+                    return {
+                        success: true,
+                        data: {
+                            eventType: 'payment_success',
+                            orderId: orderIdFromMeta,
+                            sessionId: pi.id,
+                            status: 'SUCCESS',
+                            amount: pi.amount_received / 100
+                        }
+                    };
+                }
+                return { success: true, data: { eventType: 'unhandled', type: event.type } };
+
             case 'checkout.session.expired':
                 const expiredSession = event.data.object;
                 return {

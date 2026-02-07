@@ -4,16 +4,17 @@ import Cart from '../cart/cart.model.js';
 import cartService from '../cart/cart.service.js';
 import Product from '../../admin/product/product.model.js';
 import Settings from '../../admin/settings/settings.model.js';
+import settingsService from '../../admin/settings/settings.service.js';
 import logger from '../../../utils/logger.js';
 import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } from '../../../utils/constants.js';
-import { DEFAULT_DELIVERY_CHARGE } from '../../../config/env.js';
+import { DEFAULT_DELIVERY_CHARGE, ADMIN_EMAIL } from '../../../config/env.js';
 import {
     sendOrderPlacedEmail,
     sendOrderSubmittedEmail,
     sendPaymentSuccessEmail,
     sendPaymentFailedEmail
 } from '../../../utils/orderEmail.util.js';
-import { createCheckoutSession, checkPaymentStatus, retrieveSession } from '../../../utils/stripe.util.js';
+import { createPaymentIntent, checkPaymentStatus, retrieveSession } from '../../../utils/stripe.util.js';
 
 /**
  * Create order from cart
@@ -21,6 +22,21 @@ import { createCheckoutSession, checkPaymentStatus, retrieveSession } from '../.
 const createOrderFromCart = async (userId, orderData) => {
     try {
         const { deliveryAddress, paymentMethod, notes } = orderData;
+
+        if (!deliveryAddress || typeof deliveryAddress !== 'object') {
+            return { success: false, message: 'Delivery address is required' };
+        }
+        const { addressLine, city, state, pincode } = deliveryAddress;
+        if (!addressLine?.trim() || !city?.trim() || !state?.trim() || !pincode?.trim()) {
+            return { success: false, message: 'Complete delivery address (address line, city, state, pincode) is required' };
+        }
+        if (!/^\d{6}$/.test(String(pincode).trim())) {
+            return { success: false, message: 'Valid 6-digit pincode is required' };
+        }
+        const allowedMethods = Object.values(PAYMENT_METHODS);
+        if (!paymentMethod || !allowedMethods.includes(paymentMethod)) {
+            return { success: false, message: `Payment method must be one of: ${allowedMethods.join(', ')}` };
+        }
 
         // Validate cart
         const cartValidation = await cartService.validateCartItems(userId);
@@ -105,12 +121,19 @@ const createOrderFromCart = async (userId, orderData) => {
         // Clear cart after order creation
         await cartService.clearUserCart(userId);
 
-        // Send order confirmation email
+        // Send order confirmation email to customer
         try {
             await sendOrderPlacedEmail(user, order);
         } catch (emailError) {
             logger.error(`Order email error: ${emailError.message}`);
-            // Don't fail order creation if email fails
+        }
+        // Notify admin of new order (one email per order; use admin email from settings or env)
+        try {
+            const adminEmailRes = await settingsService.getSettingByKey('adminEmail');
+            const adminEmailToUse = (adminEmailRes.success && adminEmailRes.data?.value) ? adminEmailRes.data.value : ADMIN_EMAIL;
+            await sendOrderSubmittedEmail(order, adminEmailToUse);
+        } catch (adminEmailError) {
+            logger.error(`Admin order notification error: ${adminEmailError.message}`);
         }
 
         return {
@@ -136,18 +159,9 @@ const initiateOrderPayment = async (orderId, userId) => {
         }
 
         if (order.paymentMethod === PAYMENT_METHODS.COD) {
-            // For COD, mark as awaiting payment and submit for review
             order.orderStatus = ORDER_STATUS.SUBMITTED;
             order.paymentStatus = PAYMENT_STATUS.PENDING;
             await order.save();
-
-            // Notify admin
-            try {
-                await sendOrderSubmittedEmail(order);
-            } catch (error) {
-                logger.error(error);
-            }
-
             return {
                 success: true,
                 data: { paymentMethod: 'COD', status: 'submitted' },
@@ -155,29 +169,24 @@ const initiateOrderPayment = async (orderId, userId) => {
             };
         }
 
-        // For online payment (Stripe)
+        // For online payment (Stripe) - use Payment Intent for embedded UI
         const user = await User.findById(userId);
         await order.populate('items.product');
 
-        const paymentResult = await createCheckoutSession(
-            orderId,
+        const paymentResult = await createPaymentIntent(
             order.pricing.total,
-            {
-                userId: user._id.toString(),
-                email: user.email || `${user.mobile}@grapemaster.com`
-            },
-            order.items
+            orderId,
+            { userId: user._id.toString() }
         );
 
         if (!paymentResult.success) {
             return paymentResult;
         }
 
-        // Update order status
         order.orderStatus = ORDER_STATUS.AWAITING_PAYMENT;
         order.paymentStatus = PAYMENT_STATUS.INITIATED;
         order.paymentDetails = {
-            transactionId: paymentResult.data.sessionId,
+            transactionId: paymentResult.data.paymentIntentId,
             paymentGateway: 'Stripe'
         };
         await order.save();
@@ -185,10 +194,10 @@ const initiateOrderPayment = async (orderId, userId) => {
         return {
             success: true,
             data: {
-                sessionId: paymentResult.data.sessionId,
-                paymentUrl: paymentResult.data.paymentUrl
+                clientSecret: paymentResult.data.clientSecret,
+                paymentIntentId: paymentResult.data.paymentIntentId
             },
-            message: 'Payment session created successfully'
+            message: 'Payment intent created successfully'
         };
     } catch (error) {
         logger.error(`Initiate payment error: ${error.message}`);
@@ -221,9 +230,11 @@ const submitOrderForReview = async (orderId, userId) => {
 
         await order.save();
 
-        // Notify admin
+        // Notify admin (use admin email from settings or env)
         try {
-            await sendOrderSubmittedEmail(order);
+            const adminEmailRes = await settingsService.getSettingByKey('adminEmail');
+            const adminEmailToUse = (adminEmailRes.success && adminEmailRes.data?.value) ? adminEmailRes.data.value : ADMIN_EMAIL;
+            await sendOrderSubmittedEmail(order, adminEmailToUse);
         } catch (error) {
             logger.error(`Admin notification error: ${error.message}`);
         }
@@ -426,7 +437,7 @@ const getOrderDetails = async (orderId, userId) => {
     }
 };
 
-// Cancel order
+// Cancel order (respects admin config: enabled flag + cancellation window in days)
 const cancelUserOrder = async (orderId, userId) => {
     try {
         const order = await Order.findOne({ orderId, user: userId });
@@ -435,9 +446,28 @@ const cancelUserOrder = async (orderId, userId) => {
             return { success: false, message: 'Order not found' };
         }
 
-        // Only allow cancellation if order is not dispatched or delivered
         if ([ORDER_STATUS.DISPATCHED, ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED].includes(order.orderStatus)) {
             return { success: false, message: 'Cannot cancel order at this stage' };
+        }
+
+        const cancellationEnabledRes = await settingsService.getSettingByKey('orderCancellationEnabled');
+        const cancellationDaysRes = await settingsService.getSettingByKey('orderCancellationDays');
+        const cancellationEnabled = cancellationEnabledRes.success && cancellationEnabledRes.data?.value !== false
+            && cancellationEnabledRes.data?.value !== 'false';
+        const cancellationDays = (cancellationDaysRes.success && typeof cancellationDaysRes.data?.value === 'number')
+            ? Math.max(0, cancellationDaysRes.data.value)
+            : 5;
+
+        if (!cancellationEnabled) {
+            return { success: false, message: 'Order cancellation is currently disabled' };
+        }
+
+        const orderDate = new Date(order.createdAt);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - cancellationDays);
+        cutoff.setHours(0, 0, 0, 0);
+        if (orderDate < cutoff) {
+            return { success: false, message: `Cancellation is allowed only within ${cancellationDays} days of placement` };
         }
 
         order.orderStatus = ORDER_STATUS.CANCELLED;

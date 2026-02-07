@@ -1,43 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { CategoryCard } from '@/components/product/CategoryCard';
 import { CATEGORIES } from '@/constants/categories';
+import { getCategories } from '@/services/product.service';
 
 /**
  * CategorySection Component
- * Browse categories section with grid layout
+ * Real categories from DB; selection filters products on home
  */
-export function CategorySection() {
-    const [categories, setCategories] = React.useState([]);
+export function CategorySection({ selectedCategory = '', onSelectCategory }) {
+    const [categories, setCategories] = useState(CATEGORIES);
 
-    React.useEffect(() => {
+    useEffect(() => {
+        let cancelled = false;
         const fetchCategories = async () => {
             try {
-                const { getCategories } = await import('@/services/product.service');
                 const result = await getCategories();
-                if (result.success) {
-                    // Map fetched strings to category objects with icons
-                    // Ideally, backend should provide this, but for now we map dynamically
-                    const mappedCategories = result.data.map((catName, index) => {
-                        // Find matching config from constants or use default
+                if (cancelled) return;
+                if (result?.success && Array.isArray(result?.data)) {
+                    const mapped = result.data.map((catName, index) => {
                         const match = CATEGORIES.find(c => c.name === catName) || {};
                         return {
                             id: index + 1,
                             name: catName,
                             slug: match.slug || catName.toLowerCase().replace(/\s+/g, '-'),
-                            icon: match.icon || CATEGORIES[0].icon
+                            icon: match.icon || CATEGORIES[0]?.icon
                         };
                     });
-                    setCategories(mappedCategories);
+                    if (mapped.length > 0) setCategories(mapped);
                 }
-            } catch (error) {
-                console.error('Failed to fetch categories:', error);
-                // Fallback to static if fail
-                setCategories(CATEGORIES);
+            } catch {
+                if (!cancelled) setCategories(CATEGORIES);
             }
         };
         fetchCategories();
+        return () => { cancelled = true; };
     }, []);
 
     if (categories.length === 0) return null;
@@ -52,7 +50,11 @@ export function CategorySection() {
                 className="flex items-center justify-between mb-8"
             >
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Shop by Category</h2>
-                <button className="text-green-600 font-medium text-sm hover:text-green-700 flex items-center space-x-1 group">
+                <button
+                    type="button"
+                    onClick={() => onSelectCategory?.('')}
+                    className="text-green-600 font-medium text-sm hover:text-green-700 flex items-center space-x-1 group rounded-xl transition-colors"
+                >
                     <span className="hidden sm:inline">View All</span>
                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -61,13 +63,17 @@ export function CategorySection() {
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
                 {categories.map((category, index) => (
                     <motion.div
-                        key={category.id}
+                        key={category.id ?? category.name}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
-                        <CategoryCard category={category} />
+                        <CategoryCard
+                            category={category}
+                            isSelected={selectedCategory && category.name.toLowerCase() === selectedCategory.toLowerCase()}
+                            onClick={() => onSelectCategory?.(category.name)}
+                        />
                     </motion.div>
                 ))}
             </div>

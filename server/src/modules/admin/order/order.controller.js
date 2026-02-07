@@ -72,6 +72,20 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     successResponse(res, result.data, result.message);
 });
 
+// @desc    Delete order (sets to cancelled – excluded from dashboard revenue and counts)
+// @route   DELETE /api/admin/orders/:orderId
+// @access  Private/Admin
+export const deleteOrder = asyncHandler(async (req, res) => {
+    const adminId = req.user.id;
+    const result = await orderService.deleteOrder(req.params.orderId, adminId);
+
+    if (!result.success) {
+        return errorResponse(res, result.message, 400);
+    }
+
+    successResponse(res, result.data, result.message);
+});
+
 // @desc    Get order statistics
 // @route   GET /api/admin/orders/stats
 // @access  Private/Admin

@@ -3,4 +3,7 @@ export { default as ProductManager } from './ProductManager';
 export { default as UserManager } from './UserManager';
 export { default as OrderManager } from './OrderManager';
 export { default as AdminLoginPage } from './AdminLoginPage';
+export { default as AdminForgotPasswordPage } from './AdminForgotPasswordPage';
+export { default as AdminResetPasswordPage } from './AdminResetPasswordPage';
 export { default as SettingsPage } from './SettingsPage';
+export { default as DealerRequestsPage } from './DealerRequestsPage';

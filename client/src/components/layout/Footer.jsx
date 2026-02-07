@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import { APP_CONFIG } from '@/constants/config';
 
@@ -26,6 +27,7 @@ export function Footer() {
                     <div>
                         <h3 className="font-semibold text-white mb-4">Company</h3>
                         <ul className="space-y-2 text-sm">
+                            <li><Link to="/be-a-dealer" className="hover:text-green-400 transition-colors font-medium text-green-400">Be a Dealer</Link></li>
                             <li><a href="#" className="hover:text-green-400 transition-colors">About Us</a></li>
                             <li><a href="#" className="hover:text-green-400 transition-colors">Our Farms</a></li>
                             <li><a href="#" className="hover:text-green-400 transition-colors">Careers</a></li>

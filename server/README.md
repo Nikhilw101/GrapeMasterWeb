@@ -205,6 +205,22 @@ Supports:
 5. **Implement WhatsApp** - Complete WhatsApp API integration in `config/whatsapp.js`
 6. **Test APIs** - Use Postman or similar tool to test endpoints
 
+## 🗃️ Fresh deployment / database reset
+
+1. **Optional – wipe all data** (use only when you want an empty DB):
+   ```bash
+   cd server
+   RESET_DATABASE_CONFIRM=yes node scripts/resetDatabase.js
+   ```
+
+2. **Create first admin** (only when no admins exist; uses `.env` once):
+   - **Option A:** `POST /api/admin/seed` (body empty; uses `INITIAL_ADMIN_EMAIL`, `INITIAL_ADMIN_PASSWORD`, etc. from `.env`)
+   - **Option B:** `node scripts/seedAdmin.js` (same env vars)
+
+3. **Login:** Use the email and password from step 2. All future logins are **database-only**; `.env` is not used for admin login after the first admin exists.
+
+No hardcoded admin credentials remain in code. Optional cleanup of a legacy admin email: set `LEGACY_ADMIN_EMAIL_TO_REMOVE` in `.env` and run `node scripts/seedAdmin.js` to remove that account.
+
 ## 🧪 Testing
 
 Use tools like:

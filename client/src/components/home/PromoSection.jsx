@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -12,8 +13,7 @@ export function PromoSection() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Handle newsletter signup (UI only for now)
-        alert(`Thank you for subscribing with ${email}!`);
+        toast.success(`Thank you for subscribing with ${email}! We'll be in touch.`);
         setEmail('');
     };
 

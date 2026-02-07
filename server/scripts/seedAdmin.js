@@ -1,12 +1,22 @@
+/**
+ * One-time admin seed script.
+ * Uses INITIAL_ADMIN_* from server .env (same as POST /api/admin/seed).
+ * Optionally removes a legacy admin by email if LEGACY_ADMIN_EMAIL_TO_REMOVE is set in .env.
+ * Run from server folder: node scripts/seedAdmin.js
+ */
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
-// import { printTable } from 'console-table-printer'; // Removed dependency
-import Admin from '../src/modules/admin/admin.model.js';
+import { fileURLToPath } from 'url';
 
-// Load env vars
-dotenv.config({ path: path.join(process.cwd(), '.env') });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+const { default: Admin } = await import('../src/modules/admin/admin.model.js');
+const { INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD, INITIAL_ADMIN_NAME, INITIAL_ADMIN_MOBILE } = await import('../src/config/env.js');
+
+const legacyEmailToRemove = process.env.LEGACY_ADMIN_EMAIL_TO_REMOVE?.trim();
 
 const seedAdmin = async () => {
     try {
@@ -14,32 +24,35 @@ const seedAdmin = async () => {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Database connected successfully');
 
-        // Check if admin exists
-        const adminExists = await Admin.findOne({ email: 'admin@grapemaster.com' });
-
-        if (adminExists) {
-            console.log('Admin user exists. Deleting to reset credentials...');
-            await Admin.deleteOne({ email: 'admin@grapemaster.com' });
+        if (legacyEmailToRemove) {
+            const deleted = await Admin.deleteOne({ email: legacyEmailToRemove });
+            if (deleted.deletedCount) {
+                console.log(`Removed legacy admin (${legacyEmailToRemove}) from database.`);
+            }
         }
 
-        // Create admin user
+        if (!INITIAL_ADMIN_EMAIL || !INITIAL_ADMIN_PASSWORD) {
+            console.error('Set INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD in server .env, then run this script.');
+            process.exit(1);
+        }
+
+        const existing = await Admin.findOne({ email: INITIAL_ADMIN_EMAIL.toLowerCase().trim() });
+        if (existing) {
+            console.log('Admin already exists for', INITIAL_ADMIN_EMAIL);
+            process.exit(0);
+        }
+
         const admin = await Admin.create({
-            name: 'Super Admin',
-            email: 'admin@grapemaster.com',
-            password: 'admin123',
+            name: INITIAL_ADMIN_NAME || 'Admin',
+            email: INITIAL_ADMIN_EMAIL.toLowerCase().trim(),
+            password: INITIAL_ADMIN_PASSWORD,
             role: 'admin',
-            mobile: '9999999999',
+            mobile: INITIAL_ADMIN_MOBILE || '0000000000',
             isActive: true
         });
 
-        console.log('Admin user created successfully');
-        console.log({
-            Email: admin.email,
-            Password: 'admin123',
-            Role: admin.role,
-            Status: 'Active'
-        });
-
+        console.log('Admin created from .env:');
+        console.log({ Email: admin.email, Role: admin.role, Status: 'Active' });
         process.exit(0);
     } catch (error) {
         console.error('Error seeding admin:', error);

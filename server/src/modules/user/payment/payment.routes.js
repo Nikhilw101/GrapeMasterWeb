@@ -7,9 +7,6 @@ const router = express.Router();
 // Initiate payment for order (protected)
 router.post('/initiate/:orderId', protect, paymentController.initiatePayment);
 
-// Stripe webhook (public - webhook signature verified in controller)
-router.post('/webhook', paymentController.paymentWebhook);
-
 // Get payment status (protected)
 router.get('/status/:orderId', protect, paymentController.getPaymentStatus);
 

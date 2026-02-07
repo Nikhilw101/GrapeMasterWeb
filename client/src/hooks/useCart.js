@@ -12,7 +12,7 @@ export function useCart() {
     const { isAuthenticated } = useAuth();
     const [localCart, setLocalCart] = useLocalStorage('grapemaster-cart', []);
     const [cart, setCart] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(isAuthenticated);
 
     // Sync state with local storage or backend
     useEffect(() => {
@@ -20,6 +20,7 @@ export function useCart() {
             fetchBackendCart();
         } else {
             setCart(localCart);
+            setIsLoading(false);
         }
     }, [isAuthenticated, localCart]);
 
@@ -27,25 +28,25 @@ export function useCart() {
         try {
             setIsLoading(true);
             const result = await cartService.getCart();
-            if (result.success) {
-                // Transform backend cart items to match frontend structure
+            if (result?.success && result?.data?.items) {
                 const backendItems = result.data.items.map(item => ({
-                    id: item.product._id,
-                    product: item.product._id, // Keep reference
-                    name: item.product.name,
-                    price: item.product.price,
-                    image: item.product.image,
-                    weight: item.product.weight || item.product.unit || '1 kg', // Fallback
+                    id: item.product?._id,
+                    product: item.product?._id,
+                    name: item.product?.name,
+                    price: item.product?.price,
+                    image: item.product?.image,
+                    weight: item.product?.weight || item.product?.unit || '1 kg',
                     quantity: item.quantity
                 }));
                 setCart(backendItems);
             }
         } catch (error) {
             if (error.response?.status === 401) {
-                // Session likely expired, suppress error or handle logout
-                console.warn('Cart sync failed: Unauthorized');
-            } else {
-                console.error('Failed to fetch cart:', error);
+                return;
+            }
+            if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+                setCart([]);
+                return;
             }
         } finally {
             setIsLoading(false);

@@ -305,15 +305,21 @@ const getUserProfile = async (userId) => {
 // Update user profile
 const updateUserProfile = async (userId, updateData) => {
     try {
-        const user = await User.findByIdAndUpdate(
-            userId,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        );
-
+        const user = await User.findById(userId);
         if (!user) {
             throw new Error('User not found');
         }
+
+        if (updateData.mobile !== undefined && updateData.mobile !== user.mobile) {
+            const existing = await User.findOne({ mobile: updateData.mobile });
+            if (existing) {
+                throw new Error('Another account already uses this mobile number');
+            }
+            user.mobile = updateData.mobile;
+        }
+        if (updateData.name !== undefined) user.name = updateData.name;
+        if (updateData.email !== undefined) user.email = updateData.email;
+        await user.save();
 
         return {
             success: true,

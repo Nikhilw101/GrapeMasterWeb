@@ -6,11 +6,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import routes from './routes.js';
 import errorMiddleware from './middlewares/error.middleware.js';
+import * as paymentController from './modules/user/payment/payment.controller.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Stripe webhook must receive raw body for signature verification (before express.json())
+app.post(
+    '/api/payments/webhook',
+    express.raw({ type: 'application/json' }),
+    paymentController.paymentWebhook
+);
 
 // Middleware
 app.use(helmet({

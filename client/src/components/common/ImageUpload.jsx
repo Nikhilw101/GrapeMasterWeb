@@ -1,7 +1,7 @@
-
 import React, { useState, useRef } from 'react';
 import { Upload, X, Loader, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { getAssetBaseUrl } from '@/config/env';
 import * as uploadService from '@/services/upload.service';
 
 const ImageUpload = ({ value, onChange, className }) => {
@@ -113,7 +113,7 @@ const ImageUpload = ({ value, onChange, className }) => {
                     <div className="relative w-full h-full min-h-[200px]">
                         {/* Image Preview */}
                         <img
-                            src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001'}${value}`}
+                            src={`${getAssetBaseUrl()}${value?.startsWith('/') ? value : `/${value || ''}`}`}
                             alt="Uploaded preview"
                             className="absolute inset-0 w-full h-full object-contain bg-white"
                         />

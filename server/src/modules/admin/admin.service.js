@@ -1,81 +1,115 @@
+import crypto from 'crypto';
 import Admin from './admin.model.js';
 import User from '../user/user.model.js';
 import Order from '../user/order/order.model.js';
+import DealerRequest from '../dealer/dealer.model.js';
 import { generateTokenPair } from '../../utils/jwt.util.js';
+import { sendAdminPasswordResetEmail, sendAdminPasswordResetSuccessEmail } from '../../utils/email.util.js';
+import { ADMIN_RESET_PASSWORD_URL, INITIAL_ADMIN_EMAIL, INITIAL_ADMIN_PASSWORD, INITIAL_ADMIN_NAME, INITIAL_ADMIN_MOBILE } from '../../config/env.js';
+import { ORDER_STATUS, USER_ROLES, PAYMENT_STATUS, PAYMENT_METHODS } from '../../utils/constants.js';
+import {
+    effectiveOrderFilter,
+    revenueMatch,
+    revenueEligibleCond,
+    pendingOrdersFilter,
+    EFFECTIVE_ORDER_STATUSES
+} from '../../utils/orderStats.util.js';
 import logger from '../../utils/logger.js';
 
-// Admin login
-const loginAdmin = async (email, password) => {
+// Seed initial admin (one-time: only when no admins exist; uses env INITIAL_ADMIN_*)
+const seedInitialAdmin = async () => {
     try {
-        const admin = await Admin.findOne({ email }).select('+password');
-
-        if (!admin) {
-            throw new Error('Invalid credentials');
+        const count = await Admin.countDocuments();
+        if (count > 0) {
+            return { success: false, message: 'Admin already exists. Login with your DB credentials.' };
         }
-
-        if (!admin.isActive) {
-            throw new Error('Admin account is deactivated');
+        if (!INITIAL_ADMIN_EMAIL || !INITIAL_ADMIN_PASSWORD) {
+            return { success: false, message: 'Set INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD in .env for first-time setup.' };
         }
-
-        const isPasswordMatch = await admin.comparePassword(password);
-        if (!isPasswordMatch) {
-            throw new Error('Invalid credentials');
-        }
-
-        // Generate access and refresh tokens
-        const { accessToken, refreshToken } = generateTokenPair({
-            id: admin._id,
-            role: admin.role
+        await Admin.create({
+            name: INITIAL_ADMIN_NAME,
+            email: INITIAL_ADMIN_EMAIL.toLowerCase().trim(),
+            mobile: (INITIAL_ADMIN_MOBILE || '0000000000').replace(/\D/g, '').slice(0, 10) || '0000000000',
+            password: INITIAL_ADMIN_PASSWORD
         });
-
-        return {
-            success: true,
-            data: {
-                admin: {
-                    id: admin._id,
-                    name: admin.name,
-                    email: admin.email,
-                    role: admin.role
-                },
-                accessToken,
-                refreshToken
-            }
-        };
+        logger.info('Initial admin created. Change password after first login if needed.');
+        return { success: true, message: 'Initial admin created. You can now log in with that email and password. Change them in Settings after first login.' };
     } catch (error) {
-        logger.error(`Admin login error: ${error.message}`);
+        logger.error(`Seed initial admin error: ${error.message}`);
         throw error;
     }
 };
 
-// Get dashboard statistics
+// Admin login (always from DB – email + password; no hardcoded env after seed)
+const loginAdmin = async (email, password) => {
+    const admin = await Admin.findOne({ email: email?.toLowerCase?.()?.trim() }).select('+password');
+
+    if (!admin) {
+        logger.warn('Admin login failed: no admin found for email');
+        return { success: false, message: 'Invalid email or password.' };
+    }
+
+    if (!admin.isActive) {
+        logger.warn('Admin login failed: account deactivated');
+        return { success: false, message: 'Your admin account is deactivated. Contact support.' };
+    }
+
+    const isPasswordMatch = await admin.comparePassword(password);
+    if (!isPasswordMatch) {
+        logger.warn('Admin login failed: wrong password');
+        return { success: false, message: 'Invalid email or password.' };
+    }
+
+    const { accessToken, refreshToken } = generateTokenPair({
+        id: admin._id,
+        role: admin.role
+    });
+
+    return {
+        success: true,
+        data: {
+            admin: {
+                id: admin._id,
+                name: admin.name,
+                email: admin.email,
+                role: admin.role
+            },
+            accessToken,
+            refreshToken
+        }
+    };
+};
+
+// Get dashboard statistics (structured: effective orders, revenue includes COD delivered/completed, excluded cancelled/rejected)
 const getDashboardStats = async () => {
     try {
-        const totalOrders = await Order.countDocuments();
-        const totalUsers = await User.countDocuments({ role: 'user' });
-        const pendingOrders = await Order.countDocuments({ orderStatus: 'placed' });
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
+        last7Days.setHours(0, 0, 0, 0);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-        // Calculate Total Revenue (Only successful payments)
+        const totalOrders = await Order.countDocuments(effectiveOrderFilter);
+        const totalOrdersRaw = await Order.countDocuments();
+
+        // Total users = customers only (role from constants)
+        const totalUsers = await User.countDocuments({ role: USER_ROLES.CUSTOMER });
+        const pendingOrders = await Order.countDocuments(pendingOrdersFilter);
+
+        // Total Revenue: effective orders that are paid (online success OR COD delivered/completed)
         const revenueResult = await Order.aggregate([
-            { $match: { paymentStatus: 'success' } },
+            { $match: revenueMatch },
             { $group: { _id: null, total: { $sum: '$pricing.total' } } }
         ]);
         const totalRevenue = revenueResult[0]?.total || 0;
 
-        // Calculate Sales Trend (Last 7 Days)
-        const last7Days = new Date();
-        last7Days.setDate(last7Days.getDate() - 7);
-        last7Days.setHours(0, 0, 0, 0);
-
+        const salesTrendMatch = { createdAt: { $gte: last7Days }, ...revenueMatch };
         const salesTrend = await Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: last7Days },
-                    paymentStatus: 'success'
-                }
-            },
+            { $match: salesTrendMatch },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
                     sales: { $sum: '$pricing.total' },
                     orders: { $sum: 1 }
                 }
@@ -83,9 +117,8 @@ const getDashboardStats = async () => {
             { $sort: { _id: 1 } }
         ]);
 
-        // Calculate Top Selling Products
         const topProducts = await Order.aggregate([
-            { $match: { paymentStatus: 'success' } },
+            { $match: revenueMatch },
             { $unwind: '$items' },
             {
                 $group: {
@@ -99,23 +132,52 @@ const getDashboardStats = async () => {
             { $limit: 5 }
         ]);
 
-        const recentOrders = await Order.find()
+        const recentOrders = await Order.find(effectiveOrderFilter)
             .populate('user', 'name mobile')
             .sort({ createdAt: -1 })
             .limit(5);
+
+        const cancelledOrders = await Order.countDocuments({ orderStatus: ORDER_STATUS.CANCELLED });
+        const rejectedOrders = await Order.countDocuments({ orderStatus: ORDER_STATUS.REJECTED });
+        const effectiveTotal = totalOrders;
+        const cancellationRate = totalOrdersRaw > 0 ? Number((((cancelledOrders + rejectedOrders) / totalOrdersRaw) * 100).toFixed(1)) : 0;
+
+        const dealerPending = await DealerRequest.countDocuments({ status: 'pending' });
+        const dealerTotal = await DealerRequest.countDocuments();
+
+        const userGrowth = await User.aggregate([
+            { $match: { createdAt: { $gte: thirtyDaysAgo }, role: USER_ROLES.CUSTOMER } },
+            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ]);
+
+        const ordersOverTime = await Order.aggregate([
+            { $match: { createdAt: { $gte: last7Days }, ...effectiveOrderFilter } },
+            { $addFields: { _revenueAmount: revenueEligibleCond } },
+            { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 }, revenue: { $sum: '$_revenueAmount' } } },
+            { $sort: { _id: 1 } }
+        ]);
 
         return {
             success: true,
             data: {
                 stats: {
-                    totalOrders,
+                    totalOrders: effectiveTotal,
+                    totalOrdersRaw,
                     totalUsers,
                     pendingOrders,
-                    totalRevenue
+                    totalRevenue,
+                    cancelledOrders,
+                    rejectedOrders,
+                    cancellationRate,
+                    dealerPending,
+                    dealerTotal
                 },
                 analytics: {
                     salesTrend,
-                    topProducts
+                    topProducts,
+                    ordersOverTime,
+                    userGrowth
                 },
                 recentOrders
             }
@@ -163,7 +225,15 @@ const getAllUsers = async (query) => {
             },
             {
                 $addFields: {
-                    orderCount: { $size: '$orders' },
+                    orderCount: {
+                        $size: {
+                            $filter: {
+                                input: '$orders',
+                                as: 'o',
+                                cond: { $in: ['$$o.orderStatus', EFFECTIVE_ORDER_STATUSES] }
+                            }
+                        }
+                    },
                     totalSpent: {
                         $sum: {
                             $map: {
@@ -171,7 +241,22 @@ const getAllUsers = async (query) => {
                                     $filter: {
                                         input: '$orders',
                                         as: 'order',
-                                        cond: { $eq: ['$$order.paymentStatus', 'success'] }
+                                        cond: {
+                                            $and: [
+                                                { $in: ['$$order.orderStatus', EFFECTIVE_ORDER_STATUSES] },
+                                                {
+                                                    $or: [
+                                                        { $eq: ['$$order.paymentStatus', PAYMENT_STATUS.SUCCESS] },
+                                                        {
+                                                            $and: [
+                                                                { $eq: ['$$order.paymentMethod', PAYMENT_METHODS.COD] },
+                                                                { $in: ['$$order.orderStatus', [ORDER_STATUS.DELIVERED, ORDER_STATUS.COMPLETED]] }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
                                     }
                                 },
                                 as: 'order',
@@ -222,22 +307,15 @@ const getUserById = async (userId) => {
             return { success: false, message: 'User not found' };
         }
 
-        // Get order statistics
+        // Get order statistics (effective orders only; totalSpent = revenue-eligible same as dashboard)
         const orderStats = await Order.aggregate([
-            { $match: { user: user._id } },
+            { $match: { user: user._id, ...effectiveOrderFilter } },
+            { $addFields: { _revenueAmount: revenueEligibleCond } },
             {
                 $group: {
                     _id: null,
                     totalOrders: { $sum: 1 },
-                    totalSpent: {
-                        $sum: {
-                            $cond: [
-                                { $eq: ['$paymentStatus', 'success'] },
-                                '$pricing.total',
-                                0
-                            ]
-                        }
-                    },
+                    totalSpent: { $sum: '$_revenueAmount' },
                     lastOrderDate: { $max: '$createdAt' }
                 }
             }
@@ -308,7 +386,84 @@ const updateUserStatus = async (userId, status) => {
     }
 };
 
-// Change admin password
+// Forgot password (mail-based): send reset link to admin email
+const forgotPasswordAdmin = async (email) => {
+    try {
+        const admin = await Admin.findOne({ email: email?.toLowerCase?.() || email });
+
+        if (!admin) {
+            return {
+                success: true,
+                message: 'If an admin account exists with this email, a password reset link has been sent.'
+            };
+        }
+
+        if (!admin.isActive) {
+            return {
+                success: true,
+                message: 'If an admin account exists with this email, a password reset link has been sent.'
+            };
+        }
+
+        const resetToken = admin.generateResetPasswordToken();
+        await admin.save({ validateBeforeSave: false });
+
+        const resetUrl = `${ADMIN_RESET_PASSWORD_URL}?token=${resetToken}`;
+        const emailResult = await sendAdminPasswordResetEmail(admin.email, resetUrl, admin.name);
+
+        if (!emailResult.success) {
+            admin.resetPasswordToken = undefined;
+            admin.resetPasswordExpire = undefined;
+            await admin.save({ validateBeforeSave: false });
+            throw new Error('Failed to send reset email. Please try again.');
+        }
+
+        return {
+            success: true,
+            message: 'Password reset link has been sent to your email.'
+        };
+    } catch (error) {
+        logger.error(`Admin forgot password error: ${error.message}`);
+        throw error;
+    }
+};
+
+// Reset password (mail-based): validate token and set new password
+const resetPasswordAdmin = async (token, newPassword) => {
+    try {
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const admin = await Admin.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        }).select('+password +resetPasswordToken +resetPasswordExpire');
+
+        if (!admin) {
+            throw new Error('Invalid or expired reset link. Please request a new password reset.');
+        }
+
+        admin.password = newPassword;
+        admin.resetPasswordToken = undefined;
+        admin.resetPasswordExpire = undefined;
+        await admin.save();
+
+        if (admin.email) {
+            await sendAdminPasswordResetSuccessEmail(admin.email, admin.name).catch(err =>
+                logger.error(`Admin reset success email error: ${err.message}`)
+            );
+        }
+
+        return {
+            success: true,
+            message: 'Password has been reset successfully. You can now log in with your new password.'
+        };
+    } catch (error) {
+        logger.error(`Admin reset password error: ${error.message}`);
+        throw error;
+    }
+};
+
+// Change admin password (when logged in: old password + new password)
 const changePassword = async (adminId, oldPassword, newPassword) => {
     try {
         const admin = await Admin.findById(adminId).select('+password');
@@ -336,7 +491,10 @@ const changePassword = async (adminId, oldPassword, newPassword) => {
 };
 
 export default {
+    seedInitialAdmin,
     loginAdmin,
+    forgotPasswordAdmin,
+    resetPasswordAdmin,
     getDashboardStats,
     getAllUsers,
     getUserById,

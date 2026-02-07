@@ -16,13 +16,14 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     successResponse(res, result.data, result.message);
 });
 
-// @desc    Handle Stripe payment webhook
+// @desc    Handle Stripe payment webhook (raw body required for signature verification)
 // @route   POST /api/payments/webhook
 // @access  Public (Stripe webhook)
 export const paymentWebhook = asyncHandler(async (req, res) => {
     const signature = req.headers['stripe-signature'];
+    const rawBody = req.body; // Buffer when route uses express.raw()
 
-    const webhookResult = await handleWebhook(req.body, signature);
+    const webhookResult = await handleWebhook(rawBody, signature);
 
     if (!webhookResult.success) {
         return errorResponse(res, webhookResult.message, 400);

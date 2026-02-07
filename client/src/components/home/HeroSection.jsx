@@ -55,14 +55,16 @@ export function HeroSection() {
 
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button size="lg" className="w-full sm:w-auto group">
-                                <span>Shop Now</span>
-                                <ChevronRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                            <Button asChild size="lg" className="w-full sm:w-auto group rounded-xl">
+                                <a href="#products">
+                                    <span>Shop Now</span>
+                                    <ChevronRight className="w-5 h-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                                </a>
                             </Button>
                         </motion.div>
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                                View Collection
+                            <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto rounded-xl">
+                                <a href="#categories">View Collection</a>
                             </Button>
                         </motion.div>
                     </div>

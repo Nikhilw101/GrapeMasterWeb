@@ -26,4 +26,7 @@ router.put('/:orderId/reject', orderController.rejectOrder);
 // Update order status
 router.put('/:orderId/status', orderController.updateOrderStatus);
 
+// Delete order (cancels order so it is excluded from stats)
+router.delete('/:orderId', orderController.deleteOrder);
+
 export default router;

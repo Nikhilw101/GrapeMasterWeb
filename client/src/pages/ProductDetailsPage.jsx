@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { formatPrice } from '@/lib/utils';
+import { getAssetBaseUrl } from '@/config/env';
 import { getProductById } from '@/services/product.service';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -65,9 +66,8 @@ export default function ProductDetailsPage() {
     const imageUrl = (() => {
         if (!product.image) return '/placeholder.jpg';
         if (product.image.startsWith('http')) return product.image;
-        const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001';
-        const imagePath = product.image.startsWith('/') ? product.image : `/${product.image}`;
-        return `${baseUrl}${imagePath}`;
+        const path = product.image.startsWith('/') ? product.image : `/${product.image}`;
+        return `${getAssetBaseUrl()}${path}`;
     })();
 
     return (
@@ -113,14 +113,18 @@ export default function ProductDetailsPage() {
                 >
                     <div className="mb-6">
                         <h1 className="text-4xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="flex items-center gap-1">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className={`w-4 h-4 ${i < (product.rating || 4) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-                                ))}
-                                <span className="ml-2 text-sm font-medium text-gray-500">({product.rating || 4.5} Rating)</span>
-                            </div>
-                            <Separator orientation="vertical" className="h-4" />
+                        <div className="flex items-center gap-4 mb-4 flex-wrap">
+                            {typeof product.rating === 'number' && (
+                                <>
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} className={`w-4 h-4 ${i < Math.min(5, Math.round(product.rating)) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                                        ))}
+                                        <span className="ml-2 text-sm font-medium text-gray-500">({product.rating} Rating)</span>
+                                    </div>
+                                    <Separator orientation="vertical" className="h-4" />
+                                </>
+                            )}
                             <div className="flex items-center gap-1.5 text-sm text-gray-500">
                                 <Package className="w-4 h-4" />
                                 <span>{product.stock} {product.unit || 'kg'} in stock</span>

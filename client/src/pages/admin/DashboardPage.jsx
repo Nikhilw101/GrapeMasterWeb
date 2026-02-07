@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     ShoppingBag,
     Users,
     DollarSign,
     Package,
-    ArrowUpRight
+    ArrowUpRight,
+    Ban,
+    Store,
+    TrendingUp
 } from 'lucide-react';
 import { getDashboardStats } from '@/services/admin.service';
 import { toast } from 'sonner';
 import {
     AreaChart,
     Area,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -82,30 +88,44 @@ export default function DashboardPage() {
                 <StatCard
                     icon={DollarSign}
                     label="Total Revenue"
-                    value={`₹${stats?.totalRevenue?.toLocaleString() || 0}`}
+                    value={`₹${Number(stats?.totalRevenue || 0).toLocaleString()}`}
                     color="bg-emerald-500"
                     delay={0}
                 />
                 <StatCard
                     icon={ShoppingBag}
                     label="Total Orders"
-                    value={stats?.totalOrders || 0}
+                    value={stats?.totalOrders ?? 0}
                     color="bg-blue-500"
                     delay={0.1}
                 />
                 <StatCard
                     icon={Users}
                     label="Total Users"
-                    value={stats?.totalUsers || 0}
+                    value={stats?.totalUsers ?? 0}
                     color="bg-violet-500"
                     delay={0.2}
                 />
                 <StatCard
                     icon={Package}
                     label="Pending Orders"
-                    value={stats?.pendingOrders || 0}
+                    value={stats?.pendingOrders ?? 0}
                     color="bg-amber-500"
                     delay={0.3}
+                />
+                <StatCard
+                    icon={Ban}
+                    label="Cancellations"
+                    value={`${stats?.cancelledOrders ?? 0} (${stats?.cancellationRate ?? 0}%)`}
+                    color="bg-red-500"
+                    delay={0.35}
+                />
+                <StatCard
+                    icon={Store}
+                    label="Dealer Requests"
+                    value={`${stats?.dealerPending ?? 0} pending / ${stats?.dealerTotal ?? 0} total`}
+                    color="bg-indigo-500"
+                    delay={0.4}
                 />
             </div>
 
@@ -190,6 +210,29 @@ export default function DashboardPage() {
                 </motion.div>
             </div>
 
+            {/* User Growth (last 30 days) */}
+            {analytics?.userGrowth?.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm"
+                >
+                    <h2 className="text-lg font-bold text-gray-900 mb-6">User Growth (Last 30 Days)</h2>
+                    <div className="h-[220px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analytics.userGrowth} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                <XAxis dataKey="_id" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                                <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="New users" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Recent Orders */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -199,9 +242,9 @@ export default function DashboardPage() {
             >
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-bold text-gray-900">Recent Orders</h2>
-                    <button className="text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center">
+                    <Link to="/admin/orders" className="text-sm text-blue-600 font-medium hover:text-blue-700 flex items-center">
                         View All <ArrowUpRight className="w-4 h-4 ml-1" />
-                    </button>
+                    </Link>
                 </div>
 
                 <div className="overflow-x-auto">

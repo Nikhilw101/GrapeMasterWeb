@@ -1,15 +1,14 @@
+import { API_BASE_URL } from '@/config/env';
+
 /**
  * Application Configuration
  * Contains all app-wide settings and constants
  */
-
 export const APP_CONFIG = {
     name: 'GrapeMaster',
     version: '1.0.0',
     description: 'Premium fresh grapes delivered daily',
-
-    // Base URL for future API integration
-    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+    apiBaseUrl: API_BASE_URL,
 
     // Feature flags
     features: {

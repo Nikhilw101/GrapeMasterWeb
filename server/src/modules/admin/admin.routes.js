@@ -3,14 +3,24 @@ import * as adminController from './admin.controller.js';
 import { protect } from '../../middlewares/auth.middleware.js';
 import { isAdmin } from '../../middlewares/admin.middleware.js';
 import { validate } from '../../middlewares/validate.middleware.js';
-import { adminLoginSchema, changePasswordSchema, updateUserStatusSchema } from './admin.validation.js';
+import { passwordResetRateLimiter } from '../../middlewares/rateLimiter.middleware.js';
+import {
+    adminLoginSchema,
+    adminForgotPasswordSchema,
+    adminResetPasswordSchema,
+    changePasswordSchema,
+    updateUserStatusSchema
+} from './admin.validation.js';
 
 const router = express.Router();
 
-// Public routes
+// Public routes (no auth)
+router.post('/seed', adminController.seed);
 router.post('/login', validate(adminLoginSchema), adminController.login);
+router.post('/forgot-password', passwordResetRateLimiter, validate(adminForgotPasswordSchema), adminController.forgotPassword);
+router.post('/reset-password', validate(adminResetPasswordSchema), adminController.resetPassword);
 
-// Protected routes
+// Protected routes (admin only)
 router.use(protect, isAdmin);
 
 router.get('/dashboard', adminController.getDashboard);

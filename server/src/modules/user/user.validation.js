@@ -21,7 +21,10 @@ export const loginSchema = Joi.object({
 // Update profile validation schema
 export const updateProfileSchema = Joi.object({
     name: Joi.string().trim().min(2).max(100).optional(),
-    email: Joi.string().email().optional().allow('')
+    email: Joi.string().email().optional().allow(''),
+    mobile: Joi.string().pattern(/^[6-9]\d{9}$/).optional().messages({
+        'string.pattern.base': 'Mobile must be a valid 10-digit number starting with 6-9'
+    })
 });
 
 // Address validation schema

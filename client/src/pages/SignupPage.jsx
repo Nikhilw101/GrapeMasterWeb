@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -36,19 +37,25 @@ export const SignupPage = () => {
         // Validate mobile number
         const mobilePattern = /^[6-9]\d{9}$/;
         if (!mobilePattern.test(formData.mobile)) {
-            setError('Mobile number must be 10 digits starting with 6-9');
+            const msg = 'Mobile number must be 10 digits starting with 6-9';
+            setError(msg);
+            toast.error(msg);
             return false;
         }
 
         // Validate password
         if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters long');
+            const msg = 'Password must be at least 6 characters long';
+            setError(msg);
+            toast.error(msg);
             return false;
         }
 
         // Validate name
         if (formData.name.trim().length < 2) {
-            setError('Name must be at least 2 characters long');
+            const msg = 'Name must be at least 2 characters long';
+            setError(msg);
+            toast.error(msg);
             return false;
         }
 
@@ -68,11 +75,13 @@ export const SignupPage = () => {
 
         try {
             await register(formData);
+            toast.success('Account created successfully. Welcome!');
             navigate('/');
         } catch (err) {
             console.error('Registration error:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to register';
+            const errorMessage = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
             setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsLoading(false);
         }

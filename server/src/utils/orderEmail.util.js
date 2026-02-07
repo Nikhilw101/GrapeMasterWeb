@@ -10,7 +10,25 @@ import {
     ADMIN_EMAIL,
     FRONTEND_URL
 } from '../config/env.js';
+import settingsService from '../modules/admin/settings/settings.service.js';
 import logger from './logger.js';
+
+/** Build footer from company settings (Admin Settings or env fallback) */
+const getEmailFooter = (company) => `
+    <div style="text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+        <p><strong>${company.companyName}</strong></p>
+        <p>${company.companyAddress}</p>
+        ${company.companyPhone ? `<p>Phone: ${company.companyPhone}</p>` : ''}
+        ${company.companyEmail ? `<p>Email: ${company.companyEmail}</p>` : ''}
+        <p style="margin-top: 12px;">This is an automated message. Please do not reply directly to this email.</p>
+    </div>`;
+
+const defaultCompany = () => ({
+    companyName: 'Grape Master',
+    companyAddress: '123 Grape Street, Vineyard City, CA 94000',
+    companyPhone: '',
+    companyEmail: 'hello@grapemaster.com'
+});
 
 // Initialize Resend
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
@@ -95,7 +113,9 @@ const sendEmail = async ({ to, subject, html }) => {
  * Send Order Placed Email (to Customer)
  */
 export const sendOrderPlacedEmail = async (user, order) => {
-    const subject = `Order Confirmation - ${order.orderId} | Grape Master`;
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `Order Confirmation - ${order.orderId} | ${company.companyName}`;
 
     const html = `
     <!DOCTYPE html>
@@ -182,12 +202,9 @@ export const sendOrderPlacedEmail = async (user, order) => {
 
                 <p>We'll notify you once your order is approved and ready for dispatch.</p>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
-            <div class="footer">
-                <p>© 2026 Grape Master. All rights reserved.</p>
-                <p>This is an automated email, please do not reply.</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -202,9 +219,13 @@ export const sendOrderPlacedEmail = async (user, order) => {
 
 /**
  * Send Order Submitted Email (to Admin)
+ * @param {Object} order - Order document
+ * @param {string} [adminEmailOverride] - Admin email from DB settings; falls back to env ADMIN_EMAIL if not set
  */
-export const sendOrderSubmittedEmail = async (order) => {
-    const subject = `New Order Received - ${order.orderId} | Grape Master Admin`;
+export const sendOrderSubmittedEmail = async (order, adminEmailOverride) => {
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `New Order Received - ${order.orderId} | ${company.companyName} Admin`;
 
     const html = `
     <!DOCTYPE html>
@@ -244,14 +265,21 @@ export const sendOrderSubmittedEmail = async (order) => {
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="${FRONTEND_URL}/admin/orders/${order.orderId}" class="button">Review Order</a>
                 </div>
-            </div>
+<p style="margin-top: 20px;">Best regards,<br>${company.companyName}</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
     `;
 
+    const toEmail = adminEmailOverride || ADMIN_EMAIL;
+    if (!toEmail) {
+        logger.warn('Admin email not set (settings or env); skipping admin order notification');
+        return { success: true };
+    }
     return await sendEmail({
-        to: ADMIN_EMAIL,
+        to: toEmail,
         subject,
         html
     });
@@ -261,7 +289,9 @@ export const sendOrderSubmittedEmail = async (order) => {
  * Send Payment Success Email
  */
 export const sendPaymentSuccessEmail = async (user, order) => {
-    const subject = `Payment Successful - ${order.orderId} | Grape Master`;
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `Payment Successful - ${order.orderId} | ${company.companyName}`;
 
     const html = `
     <!DOCTYPE html>
@@ -291,8 +321,9 @@ export const sendPaymentSuccessEmail = async (user, order) => {
 
                 <p>Your payment has been successfully processed. Your order is now being prepared for dispatch.</p>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -309,7 +340,9 @@ export const sendPaymentSuccessEmail = async (user, order) => {
  * Send Payment Failed Email
  */
 export const sendPaymentFailedEmail = async (user, order) => {
-    const subject = `Payment Failed - ${order.orderId} | Grape Master`;
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `Payment Failed - ${order.orderId} | ${company.companyName}`;
 
     const html = `
     <!DOCTYPE html>
@@ -337,11 +370,12 @@ export const sendPaymentFailedEmail = async (user, order) => {
                 <p>Please try again or contact us if you continue to face issues.</p>
 
                 <div style="text-align: center;">
-                    <a href="${FRONTEND_URL}/orders/${order.orderId}/payment" class="button">Retry Payment</a>
+                    <a href="${FRONTEND_URL}/checkout" class="button">Retry Payment</a>
                 </div>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -358,7 +392,9 @@ export const sendPaymentFailedEmail = async (user, order) => {
  * Send Order Approved Email
  */
 export const sendOrderApprovedEmail = async (user, order) => {
-    const subject = `Order Approved - ${order.orderId} | Grape Master`;
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `Order Approved - ${order.orderId} | ${company.companyName}`;
 
     const html = `
     <!DOCTYPE html>
@@ -384,8 +420,9 @@ export const sendOrderApprovedEmail = async (user, order) => {
 
                 <p>We'll notify you once your order is dispatched.</p>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -402,7 +439,9 @@ export const sendOrderApprovedEmail = async (user, order) => {
  * Send Order Rejected Email
  */
 export const sendOrderRejectedEmail = async (user, order, reason) => {
-    const subject = `Order Update - ${order.orderId} | Grape Master`;
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `Order Update - ${order.orderId} | ${company.companyName}`;
 
     const html = `
     <!DOCTYPE html>
@@ -433,8 +472,9 @@ export const sendOrderRejectedEmail = async (user, order, reason) => {
 
                 <p>If you have any questions, please contact our support team.</p>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -483,8 +523,9 @@ export const sendOrderStatusEmail = async (user, order, status) => {
                 
                 <p><strong>Order ID:</strong> ${order.orderId}</p>
 
-                <p>Best regards,<br>The Grape Master Team</p>
-            </div>
+<p>Best regards,<br>${company.companyName} Team</p>
+        </div>
+            ${getEmailFooter(company)}
         </div>
     </body>
     </html>
@@ -497,7 +538,56 @@ export const sendOrderStatusEmail = async (user, order, status) => {
     });
 };
 
-// Re-export existing password reset emails
+/**
+ * Send Dealer Request notification to Admin
+ * @param {string} toEmail - Admin email address
+ * @param {Object} request - Dealer request document
+ */
+export const sendDealerRequestNotification = async (toEmail, request) => {
+    if (!toEmail) return { success: true };
+    const companyRes = await settingsService.getCompanySettings();
+    const company = companyRes?.data || defaultCompany();
+    const subject = `New Dealer Request - ${request.storeName} | ${company.companyName}`;
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2c3e50; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .field { margin: 12px 0; }
+            .label { font-weight: bold; color: #555; }
+            .button { display: inline-block; padding: 12px 24px; background: #2c3e50; color: white; text-decoration: none; border-radius: 5px; margin-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>New Dealer Request</h1>
+            </div>
+            <div class="content">
+                <p>A new "Be a Dealer" form has been submitted.</p>
+                <div class="field"><span class="label">Store / Business:</span> ${request.storeName || '—'}</div>
+                <div class="field"><span class="label">Owner Name:</span> ${request.ownerName || '—'}</div>
+                <div class="field"><span class="label">Email:</span> ${request.email || '—'}</div>
+                <div class="field"><span class="label">Phone:</span> ${request.phone || '—'}</div>
+                <div class="field"><span class="label">Address:</span> ${request.address || '—'}</div>
+                ${request.businessDetails ? `<div class="field"><span class="label">Business details:</span><br/>${request.businessDetails}</div>` : ''}
+                ${request.notes ? `<div class="field"><span class="label">Notes:</span><br/>${request.notes}</div>` : ''}
+                <p><a href="${FRONTEND_URL}/admin/dealer-requests" class="button">View in Admin Panel</a></p>
+<p style="margin-top: 20px;">Best regards,<br>${company.companyName}</p>
+        </div>
+            ${getEmailFooter(company)}
+        </div>
+    </body>
+    </html>
+    `;
+    return await sendEmail({ to: toEmail, subject, html });
+};
+
+// Re-export auth emails (password reset, welcome) from email.util
 export { sendPasswordResetEmail, sendPasswordResetSuccessEmail, sendWelcomeEmail } from './email.util.js';
 
 export default {
@@ -508,5 +598,6 @@ export default {
     sendPaymentFailedEmail,
     sendOrderApprovedEmail,
     sendOrderRejectedEmail,
-    sendOrderStatusEmail
+    sendOrderStatusEmail,
+    sendDealerRequestNotification
 };

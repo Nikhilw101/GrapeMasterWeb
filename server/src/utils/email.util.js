@@ -1,9 +1,17 @@
 import { Resend } from 'resend';
-import {
-  RESEND_API_KEY,
-  EMAIL_FROM
-} from '../config/env.js';
+import { RESEND_API_KEY, EMAIL_FROM, ADMIN_RESET_PASSWORD_URL } from '../config/env.js';
+import settingsService from '../modules/admin/settings/settings.service.js';
 import logger from './logger.js';
+
+/** Build footer from company settings (Admin Settings or env fallback) */
+const getEmailFooter = (company) => `
+  <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+    <p><strong>${company.companyName}</strong></p>
+    <p>${company.companyAddress}</p>
+    ${company.companyPhone ? `<p>Phone: ${company.companyPhone}</p>` : ''}
+    ${company.companyEmail ? `<p>Email: ${company.companyEmail}</p>` : ''}
+    <p style="margin-top: 8px;">This is an automated message. Please do not reply directly.</p>
+  </div>`;
 
 // Initialize Resend
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
@@ -62,7 +70,9 @@ export const sendEmail = async (options) => {
  * @returns {Promise<Object>} Email send result
  */
 export const sendPasswordResetEmail = async (email, resetUrl, name) => {
-  const subject = 'Password Reset Request - Grape Master';
+  const companyRes = await settingsService.getCompanySettings();
+  const company = companyRes?.data || { companyName: 'Grape Master', companyAddress: '', companyPhone: '', companyEmail: '' };
+  const subject = `Password Reset Request - ${company.companyName}`;
 
   const html = `
     <!DOCTYPE html>
@@ -81,7 +91,7 @@ export const sendPasswordResetEmail = async (email, resetUrl, name) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🍇 Grape Master</h1>
+          <h1>🍇 ${company.companyName}</h1>
         </div>
         <div class="content">
           <h2>Hello ${name}!</h2>
@@ -98,12 +108,102 @@ export const sendPasswordResetEmail = async (email, resetUrl, name) => {
           
           <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
           
-          <p>Best regards,<br>The Grape Master Team</p>
+          <p>Best regards,<br>${company.companyName} Team</p>
         </div>
-        <div class="footer">
-          <p>© 2026 Grape Master. All rights reserved.</p>
-          <p>This is an automated email, please do not reply.</p>
+        ${getEmailFooter(company)}
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html });
+};
+
+/**
+ * Send Admin Password Reset Email
+ * @param {String} email - Admin email
+ * @param {String} resetUrl - Password reset URL (with token)
+ * @param {String} name - Admin name
+ * @returns {Promise<Object>} Email send result
+ */
+export const sendAdminPasswordResetEmail = async (email, resetUrl, name) => {
+  const companyRes = await settingsService.getCompanySettings();
+  const company = companyRes?.data || { companyName: 'Grape Master', companyAddress: '', companyPhone: '', companyEmail: '' };
+  const subject = `Admin Password Reset - ${company.companyName}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #0d9488 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; padding: 12px 30px; background: #059669; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔐 Admin Password Reset</h1>
         </div>
+        <div class="content">
+          <h2>Hello ${name},</h2>
+          <p>We received a request to reset your <strong>admin</strong> password. Click the button below to set a new password:</p>
+          <a href="${resetUrl}" class="button">Reset Admin Password</a>
+          <p>Or copy this link: <span style="word-break: break-all; color: #059669;">${resetUrl}</span></p>
+          <div class="warning">
+            <strong>⏰ This link expires in 10 minutes.</strong> If you didn't request this, ignore this email.
+          </div>
+          <p>Best regards,<br>${company.companyName}</p>
+        </div>
+        ${getEmailFooter(company)}
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html });
+};
+
+/**
+ * Send Admin Password Reset Success Email
+ * @param {String} email - Admin email
+ * @param {String} name - Admin name
+ * @returns {Promise<Object>} Email send result
+ */
+export const sendAdminPasswordResetSuccessEmail = async (email, name) => {
+  const companyRes = await settingsService.getCompanySettings();
+  const company = companyRes?.data || { companyName: 'Grape Master', companyAddress: '', companyPhone: '', companyEmail: '' };
+  const subject = `Admin Password Reset Successful - ${company.companyName}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .success { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>✅ Admin Password Reset Successful</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${name},</h2>
+          <div class="success">
+            <strong>Success!</strong> Your admin password has been reset. You can now log in with your new password.
+          </div>
+          <p>Best regards,<br>${company.companyName}</p>
+        </div>
+        ${getEmailFooter(company)}
       </div>
     </body>
     </html>
@@ -119,7 +219,9 @@ export const sendPasswordResetEmail = async (email, resetUrl, name) => {
  * @returns {Promise<Object>} Email send result
  */
 export const sendPasswordResetSuccessEmail = async (email, name) => {
-  const subject = 'Password Successfully Reset - Grape Master';
+  const companyRes = await settingsService.getCompanySettings();
+  const company = companyRes?.data || { companyName: 'Grape Master', companyAddress: '', companyPhone: '', companyEmail: '' };
+  const subject = `Password Successfully Reset - ${company.companyName}`;
 
   const html = `
     <!DOCTYPE html>
@@ -146,15 +248,13 @@ export const sendPasswordResetSuccessEmail = async (email, name) => {
             <strong>Success!</strong> Your password has been successfully reset.
           </div>
           
-          <p>You can now log in to your Grape Master account using your new password.</p>
+          <p>You can now log in to your ${company.companyName} account using your new password.</p>
           
           <p>If you did not make this change, please contact our support team immediately.</p>
           
-          <p>Best regards,<br>The Grape Master Team</p>
+          <p>Best regards,<br>${company.companyName} Team</p>
         </div>
-        <div class="footer">
-          <p>© 2026 Grape Master. All rights reserved.</p>
-        </div>
+        ${getEmailFooter(company)}
       </div>
     </body>
     </html>
@@ -170,7 +270,9 @@ export const sendPasswordResetSuccessEmail = async (email, name) => {
  * @returns {Promise<Object>} Email send result
  */
 export const sendWelcomeEmail = async (email, name) => {
-  const subject = 'Welcome to Grape Master! 🍇';
+  const companyRes = await settingsService.getCompanySettings();
+  const company = companyRes?.data || { companyName: 'Grape Master', companyAddress: '', companyPhone: '', companyEmail: '' };
+  const subject = `Welcome to ${company.companyName}! 🍇`;
 
   const html = `
     <!DOCTYPE html>
@@ -187,18 +289,16 @@ export const sendWelcomeEmail = async (email, name) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🍇 Welcome to Grape Master!</h1>
+          <h1>🍇 Welcome to ${company.companyName}!</h1>
         </div>
         <div class="content">
           <h2>Hello ${name}!</h2>
-          <p>Thank you for joining Grape Master. We're excited to have you!</p>
+          <p>Thank you for joining ${company.companyName}. We're excited to have you!</p>
           <p>You can now browse our premium quality grapes and place orders with ease.</p>
           <p>If you have any questions, feel free to contact us.</p>
-          <p>Happy shopping!<br>The Grape Master Team</p>
+          <p>Happy shopping!<br>${company.companyName} Team</p>
         </div>
-        <div class="footer">
-          <p>© 2026 Grape Master. All rights reserved.</p>
-        </div>
+        ${getEmailFooter(company)}
       </div>
     </body>
     </html>
@@ -211,5 +311,7 @@ export default {
   sendEmail,
   sendPasswordResetEmail,
   sendPasswordResetSuccessEmail,
+  sendAdminPasswordResetEmail,
+  sendAdminPasswordResetSuccessEmail,
   sendWelcomeEmail
 };

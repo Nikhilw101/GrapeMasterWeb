@@ -40,6 +40,11 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', 'Inter', system-ui, sans-serif;
   }
+
+  /* Smooth transitions and rounded UI */
+  button, a, input, [role="button"] {
+    @apply transition-colors duration-200;
+  }
 }
 
 /* Custom scrollbar for webkit browsers */

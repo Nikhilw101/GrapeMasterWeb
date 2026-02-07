@@ -2,11 +2,23 @@ import adminService from './admin.service.js';
 import asyncHandler from '../../utils/asyncHandler.js';
 import { successResponse, errorResponse } from '../../utils/apiResponse.js';
 
-// @desc    Admin login
+// @desc    Seed initial admin (one-time; env INITIAL_ADMIN_*)
+// @route   POST /api/admin/seed
+// @access  Public
+export const seed = asyncHandler(async (req, res) => {
+    const result = await adminService.seedInitialAdmin();
+    if (!result.success) return errorResponse(res, result.message, 400);
+    successResponse(res, { message: result.message }, result.message);
+});
+
+// @desc    Admin login (email + password from DB)
 // @route   POST /api/admin/login
 // @access  Public
 export const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+    if (!email?.trim() || !password) {
+        return errorResponse(res, 'Email and password are required.', 400);
+    }
     const result = await adminService.loginAdmin(email, password);
 
     if (!result.success) {
@@ -14,6 +26,26 @@ export const login = asyncHandler(async (req, res) => {
     }
 
     successResponse(res, result.data, 'Admin login successful');
+});
+
+// @desc    Admin forgot password (mail-based)
+// @route   POST /api/admin/forgot-password
+// @access  Public
+export const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const result = await adminService.forgotPasswordAdmin(email);
+    if (!result.success) return errorResponse(res, result.message, 400);
+    successResponse(res, { message: result.message }, result.message);
+});
+
+// @desc    Admin reset password (token + new password)
+// @route   POST /api/admin/reset-password
+// @access  Public
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { token, password } = req.body;
+    const result = await adminService.resetPasswordAdmin(token, password);
+    if (!result.success) return errorResponse(res, result.message, 400);
+    successResponse(res, { message: result.message }, result.message);
 });
 
 // @desc    Get admin dashboard stats

@@ -1,7 +1,8 @@
 import Order from '../../user/order/order.model.js';
 import User from '../../user/user.model.js';
 import logger from '../../../utils/logger.js';
-import { ORDER_STATUS, PAYMENT_STATUS } from '../../../utils/constants.js';
+import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } from '../../../utils/constants.js';
+import { effectiveOrderFilter, revenueMatch, pendingOrdersFilter } from '../../../utils/orderStats.util.js';
 import {
     sendOrderApprovedEmail,
     sendOrderRejectedEmail,
@@ -227,6 +228,12 @@ const updateOrderStatus = async (orderId, status, note) => {
 
         if (status === ORDER_STATUS.DELIVERED) {
             order.deliveryDate = new Date();
+            if (order.paymentMethod === 'cod') {
+                order.paymentStatus = PAYMENT_STATUS.SUCCESS;
+            }
+        }
+        if (status === ORDER_STATUS.COMPLETED && order.paymentMethod === 'cod') {
+            order.paymentStatus = PAYMENT_STATUS.SUCCESS;
         }
 
         await order.save();
@@ -255,17 +262,54 @@ const updateOrderStatus = async (orderId, status, note) => {
 };
 
 /**
- * Get order statistics
+ * Delete order (admin) – sets order to cancelled so it is excluded from revenue and counts
+ */
+const deleteOrder = async (orderId, adminId) => {
+    try {
+        const order = await Order.findOne({ orderId });
+        if (!order) {
+            return { success: false, message: 'Order not found' };
+        }
+        order.orderStatus = ORDER_STATUS.CANCELLED;
+        order.statusHistory.push({
+            status: ORDER_STATUS.CANCELLED,
+            note: 'Deleted by admin'
+        });
+        if (order.adminReview) {
+            order.adminReview.reviewedBy = adminId;
+            order.adminReview.reviewedAt = new Date();
+            order.adminReview.reviewNote = (order.adminReview.reviewNote || '') + ' [Order deleted by admin]';
+        } else {
+            order.adminReview = {
+                reviewedBy: adminId,
+                reviewedAt: new Date(),
+                reviewNote: 'Order deleted by admin',
+                approvalStatus: 'rejected'
+            };
+        }
+        await order.save();
+        return { success: true, data: order, message: 'Order deleted. It is now excluded from dashboard counts and revenue.' };
+    } catch (error) {
+        logger.error(`Delete order error: ${error.message}`);
+        return { success: false, message: error.message };
+    }
+};
+
+/**
+ * Get order statistics (single source of truth via orderStats.util; aligned with dashboard)
  */
 const getOrderStats = async () => {
     try {
-        const totalOrders = await Order.countDocuments();
-        const pendingOrders = await Order.countDocuments({ 'adminReview.approvalStatus': 'pending' });
-        const approvedOrders = await Order.countDocuments({ 'adminReview.approvalStatus': 'approved' });
+        const totalOrders = await Order.countDocuments(effectiveOrderFilter);
+        const pendingOrders = await Order.countDocuments(pendingOrdersFilter);
+        const approvedOrders = await Order.countDocuments({
+            ...effectiveOrderFilter,
+            'adminReview.approvalStatus': 'approved'
+        });
         const completedOrders = await Order.countDocuments({ orderStatus: ORDER_STATUS.COMPLETED });
 
-        const totalRevenue = await Order.aggregate([
-            { $match: { paymentStatus: PAYMENT_STATUS.SUCCESS } },
+        const totalRevenueResult = await Order.aggregate([
+            { $match: revenueMatch },
             { $group: { _id: null, total: { $sum: '$pricing.total' } } }
         ]);
 
@@ -276,7 +320,7 @@ const getOrderStats = async () => {
                 pendingOrders,
                 approvedOrders,
                 completedOrders,
-                totalRevenue: totalRevenue[0]?.total || 0
+                totalRevenue: totalRevenueResult[0]?.total || 0
             }
         };
     } catch (error) {
@@ -291,5 +335,6 @@ export default {
     approveOrder,
     rejectOrder,
     updateOrderStatus,
+    deleteOrder,
     getOrderStats
 };

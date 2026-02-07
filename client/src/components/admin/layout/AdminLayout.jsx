@@ -8,11 +8,12 @@ import {
     LogOut,
     Menu,
     X,
-    UserCircle,
-    Settings
+    Settings,
+    Store
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { adminLogout } from '@/services/admin.service';
 import api from '@/services/api';
 
@@ -43,11 +44,12 @@ export default function AdminLayout() {
             navigate('/admin/login');
         }
 
-        // Add interceptor to handle 401s globally
+        // Add interceptor to handle 401s globally (e.g. token expired)
         const interceptor = api.interceptors.response.use(
             (response) => response,
             (error) => {
                 if (error.response?.status === 401) {
+                    toast.error('Session expired or invalid. Please log in again.');
                     adminLogout();
                 }
                 return Promise.reject(error);
@@ -68,6 +70,7 @@ export default function AdminLayout() {
         { path: '/admin/products', label: 'Products', icon: Package },
         { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
         { path: '/admin/users', label: 'Users', icon: Users },
+        { path: '/admin/dealer-requests', label: 'Dealer Requests', icon: Store },
         { path: '/admin/settings', label: 'Settings', icon: Settings },
     ];
 

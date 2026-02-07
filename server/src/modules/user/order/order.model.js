@@ -63,7 +63,7 @@ const orderSchema = new mongoose.Schema({
     orderStatus: {
         type: String,
         enum: Object.values(ORDER_STATUS),
-        default: ORDER_STATUS.PLACED
+        default: ORDER_STATUS.CREATED
     },
     statusHistory: [{
         status: String,

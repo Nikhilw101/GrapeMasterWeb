@@ -17,6 +17,18 @@ export const adminLogout = () => {
     window.location.href = '/admin/login';
 };
 
+// Admin forgot password (mail-based: sends reset link to admin email)
+export const adminForgotPassword = async (email) => {
+    const response = await api.post('/admin/forgot-password', { email });
+    return response.data;
+};
+
+// Admin reset password (token from email link + new password)
+export const adminResetPassword = async (token, password) => {
+    const response = await api.post('/admin/reset-password', { token, password });
+    return response.data;
+};
+
 export const changePassword = async (passwords) => {
     const response = await api.put('/admin/change-password', passwords);
     return response.data;
@@ -104,5 +116,10 @@ export const approveOrder = async (id, note) => {
 
 export const rejectOrder = async (id, reason) => {
     const response = await api.put(`/admin/orders/${id}/reject`, { reason });
+    return response.data;
+};
+
+export const deleteOrder = async (id) => {
+    const response = await api.delete(`/admin/orders/${id}`);
     return response.data;
 };
