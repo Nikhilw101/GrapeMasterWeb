@@ -24,8 +24,8 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="flex flex-col p-0">
-                <SheetHeader className="px-6 pt-6 pb-2 shrink-0">
+            <SheetContent className="flex flex-col p-0 w-full max-w-full sm:max-w-lg">
+                <SheetHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 shrink-0">
                     <SheetTitle>Shopping Cart</SheetTitle>
                     <SheetDescription>
                         {cart.length} {cart.length === 1 ? 'item' : 'items'} in your cart
@@ -34,7 +34,7 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
 
                 <div className="flex flex-col flex-1 min-h-0 pt-4">
                     {cart.length === 0 ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 px-6">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 px-4 sm:px-6">
                             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
                                 <ShoppingBag className="w-10 h-10 text-gray-400" />
                             </div>
@@ -46,7 +46,7 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
                     ) : (
                         <>
                             {/* Cart Items - scrollable */}
-                            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-6 pr-4">
+                            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 px-4 sm:px-6 pr-2 sm:pr-4">
                                 {cart.map((item) => (
                                     <motion.div
                                         key={item.id}
@@ -103,7 +103,7 @@ export function CartDrawer({ isOpen, onClose, cart, onUpdateQuantity, onRemove, 
                             </div>
 
                             {/* Footer with subtotal + button - always visible at bottom */}
-                            <div className="shrink-0 px-6 pb-6 pt-4 bg-white border-t border-gray-100">
+                            <div className="shrink-0 px-4 sm:px-6 pb-4 sm:pb-6 pt-4 bg-white border-t border-gray-100">
                                 <Separator className="mb-4" />
                                 <div className="flex items-center justify-between text-lg font-semibold mb-4">
                                     <span>Subtotal</span>

@@ -84,7 +84,7 @@ const AppLayout = () => {
     }, []);
 
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col overflow-x-hidden">
             <Toaster position="top-center" richColors />
             <Header
                 cartCount={getCartCount()}

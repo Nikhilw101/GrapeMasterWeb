@@ -246,7 +246,7 @@ export default function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
-            <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
+            <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-20 md:pb-8 max-w-6xl min-w-0 overflow-x-hidden">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
                 <p className="text-gray-600 mb-6 sm:mb-8">
                     Review your order and delivery details below.

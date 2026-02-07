@@ -9,9 +9,9 @@ import { APP_CONFIG } from '@/constants/config';
  */
 export function Footer() {
     return (
-        <footer className="bg-gray-900 text-gray-300 mt-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
+        <footer className="bg-gray-900 text-gray-300 mt-16 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
                     {/* Shop */}
                     <div>
                         <h3 className="font-semibold text-white mb-4">Shop</h3>
@@ -59,12 +59,12 @@ export function Footer() {
 
                 <Separator className="mb-8 bg-gray-800" />
 
-                <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-                    <p className="text-sm">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0 text-center sm:text-left">
+                    <p className="text-xs sm:text-sm break-words max-w-full">
                         © 2026 {APP_CONFIG.name}. All rights reserved.
                         <Link to="/admin/login" className="ml-2 text-gray-600 hover:text-gray-500 text-xs font-normal opacity-70" aria-label="Staff">Portal</Link>
                     </p>
-                    <div className="flex items-center space-x-6">
+                    <div className="flex items-center justify-center gap-4 sm:gap-6">
                         <a href={APP_CONFIG.social.twitter} className="hover:text-green-400 transition-colors">
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" /></svg>
                         </a>

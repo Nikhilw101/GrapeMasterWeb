@@ -18,9 +18,9 @@ export function FeaturedProducts({ products = [], searchQuery, onAddToCart, onTo
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="flex items-center justify-between mb-6"
+                className="flex flex-wrap items-center justify-between gap-2 mb-6"
             >
-                <h2 className="text-2xl font-bold text-gray-900">{hasFilter ? 'Search results' : 'Fresh This Week'}</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{hasFilter ? 'Search results' : 'Fresh This Week'}</h2>
                 <a href="#products" className="text-green-600 font-medium text-sm hover:text-green-700 flex items-center space-x-1 group rounded-xl transition-colors">
                     <span>See All</span>
                     <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

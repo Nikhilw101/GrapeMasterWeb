@@ -22,10 +22,10 @@ export function Header({ cartCount, onCartClick, user, searchQuery, onSearchChan
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="sticky top-0 bg-white/95 backdrop-blur-md shadow-sm z-50 transition-all duration-300"
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16 sm:h-20">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-14 sm:h-20 gap-2 min-w-0">
                     {/* Left Section: Menu + Logo */}
-                    <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex items-center gap-1.5 sm:gap-4 min-w-0 flex-1">
                         {/* Mobile Menu */}
                         <Sheet>
                             <SheetTrigger asChild>
@@ -80,30 +80,27 @@ export function Header({ cartCount, onCartClick, user, searchQuery, onSearchChan
                         </Sheet>
 
                         {/* Logo */}
-                        <Link to="/" className="flex items-center space-x-2">
+                        <Link to="/" className="flex items-center space-x-1.5 sm:space-x-2 min-w-0 shrink-0">
                             <img
                                 src={logo}
                                 alt="GrapeMaster Logo"
-                                className="h-10 sm:h-12 w-auto object-contain"
+                                className="h-8 w-auto sm:h-12 object-contain shrink-0"
                             />
-                            <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent hidden sm:inline-block">
-                                {APP_CONFIG.name}
-                            </span>
-                            <span className="text-lg font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent sm:hidden">
+                            <span className="text-sm sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent truncate max-w-[120px] sm:max-w-none">
                                 {APP_CONFIG.name}
                             </span>
                         </Link>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center space-x-1 sm:space-x-4">
+                    <div className="flex items-center space-x-1 sm:space-x-4 shrink-0">
                         <Link to="/be-a-dealer" className="hidden sm:block">
                             <Button variant="outline" size="sm" className="text-green-600 border-green-200 hover:bg-green-50">
                                 Be a Dealer
                             </Button>
                         </Link>
                         {typeof searchQuery === 'string' && (
-                            <div className="flex items-center rounded-full border border-gray-200 bg-gray-50/80 pl-3 pr-2 py-1.5 min-w-[120px] sm:min-w-[160px] max-w-[180px] sm:max-w-[220px] focus-within:border-green-500 focus-within:bg-white transition-all">
+                            <div className="hidden sm:flex items-center rounded-full border border-gray-200 bg-gray-50/80 pl-3 pr-2 py-1.5 min-w-0 w-20 sm:w-40 md:max-w-[220px] focus-within:border-green-500 focus-within:bg-white transition-all shrink">
                                 <Search className="w-4 h-4 text-gray-400 shrink-0" />
                                 <input
                                     type="search"

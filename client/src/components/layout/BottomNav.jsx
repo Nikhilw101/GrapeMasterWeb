@@ -18,22 +18,22 @@ export function BottomNav({ cartCount, onCartClick, user }) {
     ];
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 safe-area-pb">
-            <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200">
+            <div className="flex items-stretch justify-between w-full h-14 sm:h-16 px-0 max-w-lg mx-auto">
                 {navItems.map((item) => {
                     const isActive = item.isActive ? item.isActive() : (item.to && location.pathname === item.to.split('?')[0]);
                     const Icon = item.icon;
                     const content = (
-                        <div className="flex flex-col items-center justify-center gap-0.5 py-2 px-4 min-w-[64px]">
-                            <span className="relative inline-flex">
-                                <Icon className={`w-6 h-6 ${isActive ? 'text-green-600' : 'text-gray-500'}`} />
+                        <div className="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 py-1.5 px-1">
+                            <span className="relative inline-flex shrink-0">
+                                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? 'text-green-600' : 'text-gray-500'}`} />
                                 {item.badge > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+                                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-green-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center font-semibold">
                                         {item.badge > 99 ? '99+' : item.badge}
                                     </span>
                                 )}
                             </span>
-                            <span className={`text-xs font-medium ${isActive ? 'text-green-600' : 'text-gray-500'}`}>{item.label}</span>
+                            <span className={`text-[10px] sm:text-xs font-medium truncate w-full text-center ${isActive ? 'text-green-600' : 'text-gray-500'}`}>{item.label}</span>
                         </div>
                     );
                     if (item.onClick) {

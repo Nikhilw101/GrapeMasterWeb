@@ -38,8 +38,8 @@ export default function ForgotPasswordPage() {
 
     if (sent) {
         return (
-            <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 bg-gray-50/50">
-                <Card className="w-full max-w-md">
+            <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-3 sm:p-4 pb-20 md:pb-4 bg-gray-50/50 overflow-x-hidden">
+                <Card className="w-full max-w-md min-w-0 mx-auto">
                     <CardHeader>
                         <CardTitle>Check your email</CardTitle>
                         <CardDescription>
@@ -59,15 +59,15 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 bg-gray-50/50">
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Forgot password?</CardTitle>
+        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-3 sm:p-4 pb-20 md:pb-4 bg-gray-50/50 overflow-x-hidden">
+            <Card className="w-full max-w-md min-w-0 mx-auto">
+                <CardHeader className="space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
+                    <CardTitle className="text-xl sm:text-2xl font-bold">Forgot password?</CardTitle>
                     <CardDescription>
                         Enter the email address linked to your account. We'll send you a link to reset your password.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 sm:px-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Email</label>

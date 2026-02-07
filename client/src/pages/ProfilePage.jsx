@@ -225,7 +225,7 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 pb-20 md:pb-8 max-w-5xl min-w-0 overflow-x-hidden">
             <div className="flex flex-col md:flex-row gap-8">
                 {/* Sidebar Navigation */}
                 <div className="w-full md:w-64 space-y-2">

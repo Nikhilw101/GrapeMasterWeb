@@ -88,15 +88,15 @@ export const SignupPage = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 bg-gray-50/50">
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-3 sm:p-4 pb-20 md:pb-4 bg-gray-50/50 overflow-x-hidden">
+            <Card className="w-full max-w-md min-w-0 mx-auto">
+                <CardHeader className="space-y-1 px-4 sm:px-6 pt-4 sm:pt-6">
+                    <CardTitle className="text-xl sm:text-2xl font-bold">Create an account</CardTitle>
                     <CardDescription>
                         Enter your details to create your account
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 sm:px-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Input

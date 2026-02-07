@@ -30,7 +30,7 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay }}
-        className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
+        className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow min-w-0"
     >
         <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-xl ${color}`}>
@@ -78,9 +78,9 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8 min-w-0">
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Dashboard Overview</h1>
                 <p className="text-gray-500">Welcome back! Here's what's happening today.</p>
             </div>
 

@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute -top-[40%] -left-[20%] w-[70%] h-[70%] rounded-full bg-green-500/10 blur-[100px]" />
@@ -69,13 +69,13 @@ export default function AdminLoginPage() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 relative z-10 shadow-2xl"
+                className="w-full max-w-md min-w-0 mx-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 sm:p-8 relative z-10 shadow-2xl"
             >
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-gradient-to-tr from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/20">
                         <Lock className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Admin Portal</h1>
                     <p className="text-gray-400">Enter your credentials to access the dashboard</p>
                 </div>
 

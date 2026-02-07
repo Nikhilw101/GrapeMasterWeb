@@ -83,16 +83,16 @@ export default function AdminLayout() {
                         initial={{ x: -280 }}
                         animate={{ x: 0 }}
                         exit={{ x: -280 }}
-                        className="fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 shadow-lg lg:shadow-none"
+                        className="fixed lg:static inset-y-0 left-0 z-50 w-[min(18rem,100vw-2rem)] lg:w-72 bg-white border-r border-gray-200 shadow-lg lg:shadow-none overflow-y-auto"
                     >
                         <div className="h-full flex flex-col">
                             {/* specific header */}
-                            <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
-                                <Link to="/admin/dashboard" className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white font-bold text-xl">
+                            <div className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 border-b border-gray-100 shrink-0">
+                                <Link to="/admin/dashboard" className="flex items-center gap-2 min-w-0">
+                                    <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center text-white font-bold text-xl shrink-0">
                                         G
                                     </div>
-                                    <span className="text-xl font-bold text-gray-900">AdminPanel</span>
+                                    <span className="text-base sm:text-xl font-bold text-gray-900 truncate">AdminPanel</span>
                                 </Link>
                                 <button
                                     onClick={() => setIsSidebarOpen(false)}
@@ -146,7 +146,7 @@ export default function AdminLayout() {
             <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
                 <Toaster position="top-right" richColors />
                 {/* Header */}
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8">
+                <header className="h-14 sm:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-4 lg:px-8 min-w-0">
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 hover:bg-gray-100 rounded-lg lg:hidden"
@@ -157,7 +157,7 @@ export default function AdminLayout() {
                     <div className="flex items-center gap-4 ml-auto">
                         <span className="text-sm text-gray-500 hidden sm:inline-block">
                             {new Date().toLocaleDateString('en-US', {
-                                update: 'numeric',
+                                year: 'numeric',
                                 month: 'long',
                                 day: 'numeric',
                                 weekday: 'long'
@@ -167,8 +167,8 @@ export default function AdminLayout() {
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 min-w-0 overflow-auto bg-gray-50 p-3 sm:p-6 lg:p-8">
+                    <div className="max-w-7xl mx-auto min-w-0">
                         <Outlet />
                     </div>
                 </main>
