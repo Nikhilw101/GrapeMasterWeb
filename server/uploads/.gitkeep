@@ -1,0 +1,2 @@
+# Keeps this folder in Git so uploads directory exists on clone/deploy.
+# Actual uploaded files are ignored via .gitignore (uploads/*).

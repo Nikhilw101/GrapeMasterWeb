@@ -52,8 +52,9 @@ out/
 *.sqlite3
 *.db
 
-# File uploads and temp
-uploads/
+# File uploads and temp (keep uploads folder via uploads/.gitkeep)
+uploads/*
+!uploads/.gitkeep
 temp/
 tmp/
 *.tmp
