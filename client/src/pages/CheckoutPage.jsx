@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -58,6 +58,7 @@ export default function CheckoutPage() {
     const [submitError, setSubmitError] = useState('');
     const [stripeClientSecret, setStripeClientSecret] = useState(null);
     const [stripeOrderId, setStripeOrderId] = useState(null);
+    const placeOrderInProgress = useRef(false);
 
     useEffect(() => {
         if (isCartLoading) return;
@@ -119,11 +120,13 @@ export default function CheckoutPage() {
         try {
             setIsProcessing(true);
             const result = await userService.addAddress(newAddress);
-            if (result?.success && result?.data?.addresses) {
+            // API returns { success, message, data } where data is the addresses array
+            const addressList = Array.isArray(result?.data) ? result.data : result?.data?.addresses;
+            if (result?.success && addressList) {
                 toast.success('Address saved');
-                setAddresses(result.data.addresses);
-                const added = result.data.addresses[result.data.addresses.length - 1];
-                if (added) setSelectedAddressId(added._id);
+                setAddresses(addressList);
+                const added = addressList[addressList.length - 1];
+                if (added?._id) setSelectedAddressId(added._id);
                 setShowAddressForm(false);
                 setNewAddress({
                     addressLine: '',
@@ -148,6 +151,7 @@ export default function CheckoutPage() {
     const canPlaceOrder = selectedAddressId && addresses.length > 0 && !isProcessing;
 
     const handlePlaceOrder = async () => {
+        if (placeOrderInProgress.current) return;
         setSubmitError('');
         if (!selectedAddressId) {
             setSubmitError('Please select a delivery address.');
@@ -171,6 +175,7 @@ export default function CheckoutPage() {
             return;
         }
 
+        placeOrderInProgress.current = true;
         try {
             setIsProcessing(true);
             const orderData = {
@@ -210,6 +215,7 @@ export default function CheckoutPage() {
                 setStripeClientSecret(paymentResult.data.clientSecret);
                 setStripeOrderId(order.orderId);
                 setSubmitError('');
+                setIsProcessing(false);
                 return;
             }
 
@@ -223,6 +229,7 @@ export default function CheckoutPage() {
             toast.error(msg);
         } finally {
             setIsProcessing(false);
+            placeOrderInProgress.current = false;
         }
     };
 
